@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Prescriptions Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .management-card { cursor: pointer; transition: box-shadow 0.2s; }
+        .management-card:hover { box-shadow: 0 0 10px #007bff33; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Active Prescriptions Management</h2>
+        <a href="/application" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+    <div id="alertPlaceholder"></div>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#prescriptionModal">Add Prescription</button>
+        <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
+    </div>
+    <div id="tableContainer">
+        <div class="text-center"><div class="spinner-border"></div> Loading prescriptions...</div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Prescription -->
+<div class="modal fade" id="prescriptionModal" tabindex="-1" aria-labelledby="prescriptionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="prescriptionModalLabel">Add Prescription</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="prescriptionForm">
+          <div class="mb-3">
+            <label for="patientSelect" class="form-label">Patient</label>
+            <select class="form-select" id="patientSelect" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="medicineSelect" class="form-label">Medicine</label>
+            <select class="form-select" id="medicineSelect" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="prescriberSelect" class="form-label">Prescriber</label>
+            <select class="form-select" id="prescriberSelect" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="startDateInput" class="form-label">Start Date</label>
+            <input type="date" class="form-control" id="startDateInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="dosageInput" class="form-label">Dosage</label>
+            <input type="text" class="form-control" id="dosageInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="durationInput" class="form-label">Duration</label>
+            <input type="text" class="form-control" id="durationInput">
+          </div>
+          <div class="mb-3">
+            <label for="frequencyInput" class="form-label">Frequency</label>
+            <input type="text" class="form-control" id="frequencyInput">
+          </div>
+          <div class="mb-3">
+            <label for="quantityInput" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantityInput" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let prescriptions = [];
+let patients = [];
+let medicines = [];
+let prescribers = [];
+let editPrescriptionId = null;
+
+// Utility to get today in YYYY-MM-DD
+function todayStr() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+}
+
+window.onload = async function() {
+    await Promise.all([
+        fetchPrescriptions(),
+        fetchPatients(),
+        fetchMedicines(),
+        fetchPrescribers()
+    ]);
+    renderPrescriptions();
+    populateDropdowns();
+};
+
+async function fetchPrescriptions() {
+    try {
+        const res = await fetch('/api/prescriptions');
+        prescriptions = await res.json();
+    } catch (e) {
+        showAlert('Failed to load prescriptions.', 'danger');
+        prescriptions = [];
+    }
+}
+
+async function fetchPatients() {
+    try {
+        const res = await fetch('/api/patients');
+        patients = await res.json();
+    } catch (e) {
+        showAlert('Failed to load patients.', 'danger');
+        patients = [];
+    }
+}
+
+async function fetchMedicines() {
+    try {
+        const res = await fetch('/api/medicines');
+        medicines = await res.json();
+    } catch (e) {
+        showAlert('Failed to load medicines.', 'danger');
+        medicines = [];
+    }
+}
+
+async function fetchPrescribers() {
+    try {
+        const res = await fetch('/api/physicians');
+        prescribers = await res.json();
+    } catch (e) {
+        showAlert('Failed to load prescribers.', 'danger');
+        prescribers = [];
+    }
+}
+
+function renderPrescriptions() {
+    const tableContainer = document.getElementById('tableContainer');
+    let filtered = prescriptions.filter(p => !p.enddate || p.enddate >= todayStr());
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    if (search) {
+        filtered = filtered.filter(p =>
+            (getPatientName(p.pid) + getMedicineName(p.medicinecode) + getPrescriberName(p.prescriber) + p.startdate + p.enddate + (p.dosage || '')).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        tableContainer.innerHTML = `<div class='alert alert-info'>No active prescriptions found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>Patient</th><th>Medicine</th><th>Prescriber</th><th>Date Prescribed</th><th>Dosage</th><th>Duration</th><th>Frequency</th><th>Quantity</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const p of filtered) {
+        html += `<tr>
+            <td>${getPatientName(p.pid)}</td>
+            <td>${getMedicineName(p.medicinecode)}</td>
+            <td>${getPrescriberName(p.prescriber)}</td>
+            <td>${p.dateprescrbed}</td>
+            <td>${p.dosage || ''}</td>
+            <td>${p.duration || ''}</td>
+            <td>${p.frequency || ''}</td>
+            <td>${p.quantity || ''}</td>
+            <td>
+                <button class='btn btn-sm btn-primary me-1' onclick='editPrescription(${p.prescriptionid})'>Edit</button>
+                <button class='btn btn-sm btn-danger' onclick='deletePrescription(${p.prescriptionid})'>Delete</button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    tableContainer.innerHTML = html;
+}
+
+document.getElementById('searchInput').addEventListener('input', renderPrescriptions);
+
+function getPatientName(pid) {
+    const p = patients.find(x => x.pid === pid);
+    return p ? `${p.pfir} ${p.plast}` : pid;
+}
+function getMedicineName(code) {
+    const m = medicines.find(x => x.code === code);
+    return m ? m.name : code;
+}
+function getPrescriberName(physicianid) {
+    const p = prescribers.find(x => x.physicianid === physicianid);
+    return p ? `${p.first_name} ${p.last_name}` : physicianid;
+}
+
+function populateDropdowns() {
+    document.getElementById('patientSelect').innerHTML = patients.map(p => `<option value="${p.pid}">${p.pfir} ${p.plast}</option>`).join('');
+    document.getElementById('medicineSelect').innerHTML = medicines.map(m => `<option value="${m.code}">${m.name}</option>`).join('');
+    document.getElementById('prescriberSelect').innerHTML = prescribers.map(p => `<option value="${p.physicianid}">${p.first_name} ${p.last_name}</option>`).join('');
+}
+
+document.getElementById('prescriptionForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const data = {
+        pid: parseInt(document.getElementById('patientSelect').value),
+        medicinecode: parseInt(document.getElementById('medicineSelect').value),
+        prescriber: parseInt(document.getElementById('prescriberSelect').value),
+        dateprescrbed: document.getElementById('startDateInput').value,
+        dosage: document.getElementById('dosageInput').value,
+        duration: document.getElementById('durationInput').value,
+        frequency: document.getElementById('frequencyInput').value,
+        quantity: parseInt(document.getElementById('quantityInput').value)
+    };
+    try {
+        let res;
+        if (editPrescriptionId !== null) {
+            // Edit
+            res = await fetch(`/api/prescriptions/${editPrescriptionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Add
+            res = await fetch(`/api/prescriptions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Prescription saved successfully.', 'success');
+        await fetchPrescriptions();
+        renderPrescriptions();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('prescriptionModal')).hide();
+        e.target.reset();
+        editPrescriptionId = null;
+    } catch (err) {
+        showAlert('Failed to save prescription: ' + err, 'danger');
+    }
+};
+
+window.editPrescription = function(prescriptionid) {
+    const p = prescriptions.find(x => x.prescriptionid === prescriptionid);
+    if (!p) return;
+    editPrescriptionId = prescriptionid;
+    document.getElementById('patientSelect').value = p.pid;
+    document.getElementById('medicineSelect').value = p.medicinecode;
+    document.getElementById('prescriberSelect').value = p.prescriber;
+    document.getElementById('startDateInput').value = p.dateprescrbed;
+    document.getElementById('dosageInput').value = p.dosage || '';
+    document.getElementById('durationInput').value = p.duration || '';
+    document.getElementById('frequencyInput').value = p.frequency || '';
+    document.getElementById('quantityInput').value = p.quantity || '';
+    document.getElementById('prescriptionModalLabel').innerText = 'Edit Prescription';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('prescriptionModal')).show();
+};
+
+window.deletePrescription = async function(prescriptionid) {
+    if (!confirm('Delete this prescription?')) return;
+    try {
+        const res = await fetch(`/api/prescriptions/${prescriptionid}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Prescription deleted.', 'success');
+        await fetchPrescriptions();
+        renderPrescriptions();
+    } catch (err) {
+        showAlert('Failed to delete prescription: ' + err, 'danger');
+    }
+};
+
+function showAlert(msg, type) {
+    const alert = `<div class='alert alert-${type} alert-dismissible fade show' role='alert'>${msg}<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>`;
+    document.getElementById('alertPlaceholder').innerHTML = alert;
+    setTimeout(() => {
+        const alertEl = document.querySelector('.alert');
+        if (alertEl) alertEl.classList.remove('show');
+    }, 4000);
+}
+
+document.getElementById('prescriptionModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('prescriptionForm').reset();
+    document.getElementById('prescriptionModalLabel').innerText = 'Add Prescription';
+    editPrescriptionId = null;
+});
+</script>
+</body>
+</html> 

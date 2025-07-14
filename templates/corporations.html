@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Corporation Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Corporation Management</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#corporationModal">Add Corporation</button>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="corporationsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Percent Ownership</th>
+                            <th>Headquarters</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Corporations will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Corporation Modal -->
+    <div class="modal fade" id="corporationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add/Edit Corporation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="corporationForm" class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Percent Ownership</label>
+                            <input type="number" step="0.01" class="form-control" name="percent_ownership">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Headquarters Street</label>
+                            <input type="text" class="form-control" name="headquarters_street">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" name="headquarters_city">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" name="headquarters_state">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">ZIP</label>
+                            <input type="text" class="form-control" name="headquarters_zip">
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                    <div id="corporationFormStatus" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let editingCorporationId = null;
+    function loadCorporations() {
+        fetch('/api/corporations')
+            .then(res => res.json())
+            .then(corporations => {
+                const tbody = document.querySelector('#corporationsTable tbody');
+                tbody.innerHTML = '';
+                corporations.forEach(corp => {
+                    const hq = [corp.headquarters_street, corp.headquarters_city, corp.headquarters_state, corp.headquarters_zip].filter(Boolean).join(', ');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${corp.corporation_id}</td>
+                        <td>${corp.name}</td>
+                        <td>${corp.percent_ownership !== null && corp.percent_ownership !== undefined ? corp.percent_ownership + '%' : ''}</td>
+                        <td>${hq}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-1" data-action="edit" data-id="${corp.corporation_id}">Edit</button>
+                            <button class="btn btn-sm btn-danger" data-action="delete" data-id="${corp.corporation_id}">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(() => {
+                const tbody = document.querySelector('#corporationsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load corporations.</td></tr>';
+            });
+    }
+
+    // Handle add/edit form submit
+    document.getElementById('corporationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = Object.fromEntries(new FormData(form).entries());
+        if (data.percent_ownership) data.percent_ownership = parseFloat(data.percent_ownership);
+        let statusDiv = document.getElementById('corporationFormStatus');
+        statusDiv.innerHTML = '';
+        try {
+            let res;
+            if (editingCorporationId) {
+                res = await fetch(`/api/corporations/${editingCorporationId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                res = await fetch('/api/corporations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            if (!res.ok) throw await res.json();
+            var modal = bootstrap.Modal.getInstance(document.getElementById('corporationModal'));
+            if (modal) modal.hide();
+            form.reset();
+            editingCorporationId = null;
+            document.querySelector('.modal-title').textContent = 'Add/Edit Corporation';
+            loadCorporations();
+        } catch (err) {
+            statusDiv.innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to save corporation.'}</div>`;
+        }
+    });
+
+    // Handle edit button click
+    document.getElementById('corporationsTable').addEventListener('click', function(e) {
+        if (e.target.matches('button[data-action="edit"]')) {
+            const corpId = e.target.getAttribute('data-id');
+            fetch(`/api/corporations/${corpId}`)
+                .then(res => res.json())
+                .then(corp => {
+                    const form = document.getElementById('corporationForm');
+                    form.name.value = corp.name || '';
+                    form.percent_ownership.value = corp.percent_ownership || '';
+                    form.headquarters_street.value = corp.headquarters_street || '';
+                    form.headquarters_city.value = corp.headquarters_city || '';
+                    form.headquarters_state.value = corp.headquarters_state || '';
+                    form.headquarters_zip.value = corp.headquarters_zip || '';
+                    editingCorporationId = corpId;
+                    document.querySelector('.modal-title').textContent = 'Edit Corporation';
+                    var modal = new bootstrap.Modal(document.getElementById('corporationModal'));
+                    modal.show();
+                });
+        }
+    });
+
+    // Reset modal on open for add
+    document.getElementById('corporationModal').addEventListener('show.bs.modal', function() {
+        if (!editingCorporationId) {
+            document.getElementById('corporationForm').reset();
+            document.querySelector('.modal-title').textContent = 'Add/Edit Corporation';
+        }
+        document.getElementById('corporationFormStatus').innerHTML = '';
+    });
+
+    loadCorporations();
+});
+</script>
+{% endblock %} 

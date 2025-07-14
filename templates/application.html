@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Management System - CS631 Project</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .management-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .management-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Hospital Management System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin Panel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/application">Application</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-4">Hospital Management System</h2>
+        
+        <div class="row g-4">
+            <!-- Surgery Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/surgeries'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">🩺</div>
+                        <h5 class="card-title">Surgery Management</h5>
+                        <p class="card-text">Schedule, view, and manage surgeries and related staff assignments.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Consultation Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/consultations'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">💬</div>
+                        <h5 class="card-title">Consultation Management</h5>
+                        <p class="card-text">Manage patient consultations and physician assignments.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Medicine Inventory -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/medicines'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">💊</div>
+                        <h5 class="card-title">Medicine Inventory</h5>
+                        <p class="card-text">View and manage medicine stock and suppliers.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Active Prescriptions -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/prescriptions'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">📋</div>
+                        <h5 class="card-title">Active Prescriptions</h5>
+                        <p class="card-text">Monitor and manage patient prescriptions.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Staff Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/staff'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">👥</div>
+                        <h5 class="card-title">Staff Management</h5>
+                        <p class="card-text">Manage employees, physicians, nurses, surgeons, and their shifts.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Patient Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/patients'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">🧑‍⚕️</div>
+                        <h5 class="card-title">Patient Management</h5>
+                        <p class="card-text">View and manage patient records and admissions.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Medical Records -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/medical-records'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">📑</div>
+                        <h5 class="card-title">Medical Records</h5>
+                        <p class="card-text">Access and update patient medical data and history.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Shift Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/shifts'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">🕒</div>
+                        <h5 class="card-title">Shifts</h5>
+                        <p class="card-text">Manage staff shift schedules and assignments.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- In-Patient Management -->
+            <div class="col-md-4">
+                <div class="card management-card h-100" onclick="window.location.href='/application/in-patient-management'">
+                    <div class="card-body text-center">
+                        <div class="card-icon">🛏️</div>
+                        <h5 class="card-title">In-Patient Management</h5>
+                        <p class="card-text">Manage in-patient admissions, bed assignments, and staff assignments.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

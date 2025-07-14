@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Management - Hospital Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .patient-card { transition: transform 0.2s; }
+        .patient-card:hover { transform: translateY(-5px); }
+        .search-box { max-width: 500px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Hospital Management System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin Panel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/application">Application</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Patient Management</h2>
+            <a href="/application" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Add New Patient Section -->
+        <div class="card mb-4">
+            <div class="card-header">Insert a New Patient</div>
+            <div class="card-body">
+                <form id="addPatientForm" class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="ssn" placeholder="SSN" required autocomplete="ssn" pattern="^\\d{3}-\\d{2}-\\d{4}$" title="Format: XXX-XX-XXXX">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="first_name" placeholder="First Name" required autocomplete="given-name">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="last_name" placeholder="Last Name" required autocomplete="family-name">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="primaryphysician" id="addPrimaryPhysician" required>
+                            <option value="">Primary Physician</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" name="d_o_b" placeholder="Date of Birth" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="street" placeholder="Street" autocomplete="street-address">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="city" placeholder="City" autocomplete="address-level2">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="state" required>
+                            <option value="">State</option>
+                            <option value="AL">AL</option>
+                            <option value="AK">AK</option>
+                            <option value="AZ">AZ</option>
+                            <option value="AR">AR</option>
+                            <option value="CA">CA</option>
+                            <option value="CO">CO</option>
+                            <option value="CT">CT</option>
+                            <option value="DE">DE</option>
+                            <option value="FL">FL</option>
+                            <option value="GA">GA</option>
+                            <option value="HI">HI</option>
+                            <option value="ID">ID</option>
+                            <option value="IL">IL</option>
+                            <option value="IN">IN</option>
+                            <option value="IA">IA</option>
+                            <option value="KS">KS</option>
+                            <option value="KY">KY</option>
+                            <option value="LA">LA</option>
+                            <option value="ME">ME</option>
+                            <option value="MD">MD</option>
+                            <option value="MA">MA</option>
+                            <option value="MI">MI</option>
+                            <option value="MN">MN</option>
+                            <option value="MS">MS</option>
+                            <option value="MO">MO</option>
+                            <option value="MT">MT</option>
+                            <option value="NE">NE</option>
+                            <option value="NV">NV</option>
+                            <option value="NH">NH</option>
+                            <option value="NJ">NJ</option>
+                            <option value="NM">NM</option>
+                            <option value="NY">NY</option>
+                            <option value="NC">NC</option>
+                            <option value="ND">ND</option>
+                            <option value="OH">OH</option>
+                            <option value="OK">OK</option>
+                            <option value="OR">OR</option>
+                            <option value="PA">PA</option>
+                            <option value="RI">RI</option>
+                            <option value="SC">SC</option>
+                            <option value="SD">SD</option>
+                            <option value="TN">TN</option>
+                            <option value="TX">TX</option>
+                            <option value="UT">UT</option>
+                            <option value="VT">VT</option>
+                            <option value="VA">VA</option>
+                            <option value="WA">WA</option>
+                            <option value="WV">WV</option>
+                            <option value="WI">WI</option>
+                            <option value="WY">WY</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control" name="zip" placeholder="ZIP" autocomplete="postal-code" pattern="^\\d{5}(-\\d{4})?$" title="Format: 12345 or 12345-6789">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="gender" required>
+                            <option value="">Gender</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="blood_type" required>
+                            <option value="">Blood Type</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12 text-end">
+                        <button type="submit" class="btn btn-success">Add Patient</button>
+                    </div>
+                </form>
+                <div id="addPatientStatus" class="mt-2"></div>
+            </div>
+        </div>
+
+        <!-- Search and List Patients Section -->
+        <div class="mb-4">
+            <div class="input-group search-box mb-3">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search patients...">
+                <button class="btn btn-primary" type="button" id="searchButton">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+            <div id="patientsList" class="row g-4">
+                <!-- Patient cards will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Patient Details Modal -->
+        <div class="modal fade" id="patientDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Patient Information</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="patientDetails"></div>
+                        <hr>
+                        <h6>Diagnoses & Illnesses</h6>
+                        <div id="diagnosesIllnesses"></div>
+                        <hr>
+                        <h6>Appointments</h6>
+                        <div id="appointments"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Appointment Section -->
+        <div class="card mb-4">
+            <div class="card-header">Schedule an Appointment with a Doctor</div>
+            <div class="card-body">
+                <form id="scheduleAppointmentForm" class="row g-3">
+                    <div class="col-md-3">
+                        <select class="form-select" name="pid" id="appointmentPatient" required>
+                            <option value="">Select Patient</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="physicianid" id="appointmentDoctor" required>
+                            <option value="">Select Doctor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" name="date" required>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="type" placeholder="Type/Reason" required>
+                    </div>
+                    <div class="col-md-12 text-end">
+                        <button type="submit" class="btn btn-success">Schedule Appointment</button>
+                    </div>
+                </form>
+                <div id="scheduleAppointmentStatus" class="mt-2"></div>
+            </div>
+        </div>
+
+        <!-- View Scheduled Appointments Section -->
+        <div class="card mb-4">
+            <div class="card-header">Scheduled Appointments</div>
+            <div class="card-body">
+                <div id="appointmentsTableContainer">
+                    <p class="text-muted">Loading appointments...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allPatients = [];
+        let allPhysicians = [];
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPatients();
+            loadAppointmentFormOptions();
+            loadAppointmentsTable();
+            loadPhysiciansForAddPatient();
+
+            // Add patient form submission
+            document.getElementById('addPatientForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                // Map to backend keys
+                const payload = {
+                    PrimaryPhysician: data.primaryphysician,
+                    D_O_B: data.d_o_b,
+                    SSN: data.ssn,
+                    PFirstName: data.first_name,
+                    PLastName: data.last_name,
+                    Gender: data.gender,
+                    BloodType: data.blood_type,
+                    PStreet: data.street,
+                    PCity: data.city,
+                    PState: data.state,
+                    PZip: data.zip
+                };
+                try {
+                    const response = await fetch('/api/patients', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        document.getElementById('addPatientStatus').innerHTML = '<div class="alert alert-success">Patient added successfully!</div>';
+                        form.reset();
+                        loadPatients();
+                    } else {
+                        const err = await response.json();
+                        document.getElementById('addPatientStatus').innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to add patient.'}</div>`;
+                    }
+                } catch (error) {
+                    document.getElementById('addPatientStatus').innerHTML = '<div class="alert alert-danger">Error adding patient.</div>';
+                }
+            });
+
+            // Search functionality
+            document.getElementById('searchButton').addEventListener('click', function() {
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                filterPatients(searchTerm);
+            });
+
+            // Schedule Appointment Form Submission
+            document.getElementById('scheduleAppointmentForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch('/api/consultations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pid: data.pid,
+                            physicianid: data.physicianid,
+                            date: data.date,
+                            type: data.type
+                        })
+                    });
+                    if (response.ok) {
+                        document.getElementById('scheduleAppointmentStatus').innerHTML = '<div class="alert alert-success">Appointment scheduled successfully!</div>';
+                        form.reset();
+                        loadAppointmentsTable();
+                    } else {
+                        const err = await response.json();
+                        document.getElementById('scheduleAppointmentStatus').innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to schedule appointment.'}</div>`;
+                    }
+                } catch (error) {
+                    document.getElementById('scheduleAppointmentStatus').innerHTML = '<div class="alert alert-danger">Error scheduling appointment.</div>';
+                }
+            });
+        });
+
+        async function loadPatients() {
+            try {
+                const response = await fetch('/api/patients');
+                const patients = await response.json();
+                displayPatients(patients);
+            } catch (error) {
+                document.getElementById('patientsList').innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load patients</div></div>';
+            }
+        }
+
+        function displayPatients(patients) {
+            const list = document.getElementById('patientsList');
+            list.innerHTML = '';
+            patients.forEach(patient => {
+                const card = document.createElement('div');
+                card.className = 'col-md-4';
+                card.innerHTML = `
+                    <div class="card patient-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${patient.first_name} ${patient.last_name}</h5>
+                            <p class="card-text">
+                                <strong>SSN:</strong> ${patient.ssn}<br>
+                                <strong>City:</strong> ${patient.city || ''}, <strong>State:</strong> ${patient.state || ''}
+                            </p>
+                            <button class="btn btn-primary btn-sm" onclick="showPatientDetails('${patient.ssn}')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function filterPatients(searchTerm) {
+            const cards = document.querySelectorAll('.patient-card');
+            cards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const text = card.querySelector('.card-text').textContent.toLowerCase();
+                if (title.includes(searchTerm) || text.includes(searchTerm)) {
+                    card.closest('.col-md-4').style.display = '';
+                } else {
+                    card.closest('.col-md-4').style.display = 'none';
+                }
+            });
+        }
+
+        window.showPatientDetails = async function(ssn) {
+            try {
+                // Fetch patient by SSN (new endpoint)
+                const patientResp = await fetch(`/api/patients/ssn/${ssn}`);
+                const patient = await patientResp.json();
+                console.log('Fetched patient:', patient); // Debug log
+                if (!patient || !patient.pid) {
+                    alert('Patient not found or missing PID');
+                    return;
+                }
+                // Render patient info as editable fields (initially read-only)
+                let detailsHtml = `
+                    <form id='editPatientForm'>
+                        <div class='row g-2'>
+                            <div class='col-md-6'><label class='form-label'>First Name</label><input type='text' class='form-control' name='first_name' value='${patient.first_name || ''}' readonly></div>
+                            <div class='col-md-6'><label class='form-label'>Last Name</label><input type='text' class='form-control' name='last_name' value='${patient.last_name || ''}' readonly></div>
+                        </div>
+                        <div class='row g-2 mt-2'>
+                            <div class='col-md-6'><label class='form-label'>SSN</label><input type='text' class='form-control' name='ssn' value='${patient.ssn || ''}' readonly></div>
+                            <div class='col-md-6'><label class='form-label'>Gender</label><input type='text' class='form-control' name='gender' value='${patient.gender || ''}' readonly></div>
+                        </div>
+                        <div class='row g-2 mt-2'>
+                            <div class='col-md-6'><label class='form-label'>Blood Type</label><input type='text' class='form-control' name='blood_type' value='${patient.blood_type || ''}' readonly></div>
+                            <div class='col-md-6'><label class='form-label'>Primary Physician</label><input type='text' class='form-control' name='primaryphysician' value='${patient.primaryphysician || ''}' readonly></div>
+                        </div>
+                        <div class='row g-2 mt-2'>
+                            <div class='col-md-6'><label class='form-label'>Street</label><input type='text' class='form-control' name='street' value='${patient.street || ''}' readonly></div>
+                            <div class='col-md-3'><label class='form-label'>City</label><input type='text' class='form-control' name='city' value='${patient.city || ''}' readonly></div>
+                            <div class='col-md-1'><label class='form-label'>State</label><input type='text' class='form-control' name='state' value='${patient.state || ''}' readonly></div>
+                            <div class='col-md-2'><label class='form-label'>ZIP</label><input type='text' class='form-control' name='zip' value='${patient.zip || ''}' readonly></div>
+                        </div>
+                        <div class='mt-3' id='editPatientAlert'></div>
+                        <div class='mt-2'>
+                            <button type='button' class='btn btn-primary' id='editPatientBtn'>Edit</button>
+                            <button type='submit' class='btn btn-success d-none' id='savePatientBtn'>Save</button>
+                            <button type='button' class='btn btn-secondary d-none' id='cancelEditPatientBtn'>Cancel</button>
+                        </div>
+                    </form>
+                `;
+                document.getElementById('patientDetails').innerHTML = detailsHtml;
+
+                // Inline edit logic
+                const form = document.getElementById('editPatientForm');
+                const editBtn = document.getElementById('editPatientBtn');
+                const saveBtn = document.getElementById('savePatientBtn');
+                const cancelBtn = document.getElementById('cancelEditPatientBtn');
+                let originalValues = null;
+                editBtn.onclick = function() {
+                    // Enable all fields except SSN
+                    form.querySelectorAll('input').forEach(input => {
+                        if (input.name !== 'ssn') input.removeAttribute('readonly');
+                    });
+                    originalValues = Object.fromEntries(new FormData(form).entries());
+                    editBtn.classList.add('d-none');
+                    saveBtn.classList.remove('d-none');
+                    cancelBtn.classList.remove('d-none');
+                };
+                cancelBtn.onclick = function() {
+                    // Restore original values and disable fields
+                    for (const [k, v] of Object.entries(originalValues)) {
+                        form.elements[k].value = v;
+                    }
+                    form.querySelectorAll('input').forEach(input => input.setAttribute('readonly', ''));
+                    editBtn.classList.remove('d-none');
+                    saveBtn.classList.add('d-none');
+                    cancelBtn.classList.add('d-none');
+                    document.getElementById('editPatientAlert').innerHTML = '';
+                };
+                form.onsubmit = async function(e) {
+                    e.preventDefault();
+                    const data = Object.fromEntries(new FormData(form).entries());
+                    try {
+                        const resp = await fetch(`/api/patients/${patient.pid}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        if (resp.ok) {
+                            document.getElementById('editPatientAlert').innerHTML = `<div class='alert alert-success'>Patient updated.</div>`;
+                            form.querySelectorAll('input').forEach(input => input.setAttribute('readonly', ''));
+                            editBtn.classList.remove('d-none');
+                            saveBtn.classList.add('d-none');
+                            cancelBtn.classList.add('d-none');
+                            loadPatients();
+                        } else {
+                            const err = await resp.json();
+                            document.getElementById('editPatientAlert').innerHTML = `<div class='alert alert-danger'>${err.error || 'Failed to update patient.'}</div>`;
+                        }
+                    } catch (e) {
+                        document.getElementById('editPatientAlert').innerHTML = `<div class='alert alert-danger'>Error updating patient.</div>`;
+                    }
+                };
+
+                // Fetch allergies for this patient (by PID)
+                const allergiesResp = await fetch(`/api/patients/${patient.pid}/allergies`);
+                console.log('Allergies response:', allergiesResp);
+                const allergies = allergiesResp.ok ? await allergiesResp.json() : [];
+                if (!allergiesResp.ok) console.error('Failed to fetch allergies');
+                
+                // Create allergies HTML
+                let allergiesHtml = '';
+                if (allergies.length > 0) {
+                    allergiesHtml = '<strong>Allergies:</strong><ul>';
+                    allergies.forEach(a => {
+                        allergiesHtml += `<li>${a.description || a.allergycode}</li>`;
+                    });
+                    allergiesHtml += '</ul>';
+                } else {
+                    allergiesHtml = '<em>No allergies found.</em>';
+                }
+
+                // Fetch all possible allergies for add dropdown
+                const allAllergiesResp = await fetch('/api/allergies');
+                console.log('All allergies response:', allAllergiesResp);
+                const allAllergies = allAllergiesResp.ok ? await allAllergiesResp.json() : [];
+                if (!allAllergiesResp.ok) console.error('Failed to fetch all allergies');
+
+                // Diagnoses, Illnesses, Medical Data
+                const [diagnosesRes, illnessesRes, medDataRes] = await Promise.all([
+                    fetch(`/api/patients/${patient.pid}/diagnoses`),
+                    fetch(`/api/patients/${patient.pid}/illnesses`),
+                    fetch(`/api/medicaldata/${patient.pid}`)
+                ]);
+                console.log('Diagnoses response:', diagnosesRes);
+                console.log('Illnesses response:', illnessesRes);
+                console.log('Medical data response:', medDataRes);
+                if (!diagnosesRes.ok) console.error('Failed to fetch diagnoses');
+                if (!illnessesRes.ok) console.error('Failed to fetch illnesses');
+                if (!medDataRes.ok) console.error('Failed to fetch medical data');
+                const diagnoses = diagnosesRes.ok ? await diagnosesRes.json() : [];
+                const illnesses = illnessesRes.ok ? await illnessesRes.json() : [];
+                const medData = medDataRes.ok ? await medDataRes.json() : null;
+
+                let diagHtml = '';
+                if (diagnoses.length > 0) {
+                    diagHtml += '<strong>Diagnoses:</strong><ul>';
+                    diagnoses.forEach(d => {
+                        diagHtml += `<li>
+                            <b>${d.illness_description || d.illnesscode}</b>
+                            ${d.date ? ' (' + d.date + ')' : ''}
+                            - ${d.notes || ''} <em>${d.comment || ''}</em>
+                        </li>`;
+                    });
+                    diagHtml += '</ul>';
+                }
+                if (illnesses.length > 0) {
+                    diagHtml += '<strong>Illnesses:</strong><ul>';
+                    illnesses.forEach(i => {
+                        diagHtml += `<li>${i.code}: ${i.description}</li>`;
+                    });
+                    diagHtml += '</ul>';
+                }
+                if (!diagHtml) diagHtml = '<em>No diagnoses or illnesses found.</em>';
+                let medHtml = '';
+                if (medData && medData.patient_ssn) {
+                    medHtml = `<strong>Medical Data:</strong><ul>` +
+                        `<li>Blood Sugar: ${medData.blood_sugar ?? 'N/A'}</li>` +
+                        `<li>Cholesterol: ${medData.cholesterol ?? 'N/A'}</li>` +
+                        `<li>Triglycerides: ${medData.triglycerides ?? 'N/A'}</li>` +
+                        `<li>HDL: ${medData.hdl ?? 'N/A'}</li>` +
+                        `<li>LDL: ${medData.ldl ?? 'N/A'}</li>` +
+                        `</ul>`;
+                }
+                document.getElementById('diagnosesIllnesses').innerHTML = allergiesHtml + '<hr>' + diagHtml + (medHtml ? '<hr>' + medHtml : '');
+                document.getElementById('appointments').innerHTML = '<em>Appointments will be shown here.</em>';
+                const modal = new bootstrap.Modal(document.getElementById('patientDetailsModal'));
+                modal.show();
+
+                // Add allergy event
+                setTimeout(() => {
+                    document.getElementById('addAllergyBtn').onclick = async function() {
+                        const select = document.getElementById('addAllergySelect');
+                        const allergyCode = select.value;
+                        if (!allergyCode) return;
+                        try {
+                            const resp = await fetch(`/api/patients/${patient.pid}/allergies`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ AllergyCode: allergyCode })
+                            });
+                            if (resp.ok) {
+                                document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-success'>Allergy added.</div>`;
+                                showPatientDetails(ssn);
+                            } else {
+                                const err = await resp.json();
+                                document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-danger'>${err.error || 'Failed to add allergy.'}</div>`;
+                            }
+                        } catch (e) {
+                            document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-danger'>Error adding allergy.</div>`;
+                        }
+                    };
+                }, 100);
+                // Expose delete function globally
+                window.deletePatientAllergy = async function(pid, allergyCode) {
+                    if (!confirm('Remove this allergy from patient?')) return;
+                    try {
+                        const resp = await fetch(`/api/patients/${pid}/allergies/${allergyCode}`, { method: 'DELETE' });
+                        if (resp.ok) {
+                            document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-success'>Allergy removed.</div>`;
+                            showPatientDetails(ssn);
+                        } else {
+                            document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-danger'>Failed to remove allergy.</div>`;
+                        }
+                    } catch (e) {
+                        document.getElementById('allergyAlert').innerHTML = `<div class='alert alert-danger'>Error removing allergy.</div>`;
+                    }
+                };
+
+                // Add View Medical Records button
+                if (!document.getElementById('viewMedicalRecordsBtn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-secondary mt-2';
+                    btn.id = 'viewMedicalRecordsBtn';
+                    btn.innerHTML = '<i class="bi bi-journal-medical"></i> View Medical Records';
+                    btn.onclick = () => {
+                        window.location.href = `/application/medical-records?ssn=${patient.ssn}`;
+                    };
+                    document.getElementById('patientDetails').prepend(btn);
+                }
+            } catch (error) {
+                alert('Failed to load patient details');
+            }
+        }
+
+        async function loadAppointmentFormOptions() {
+            // Load patients
+            const patientSelect = document.getElementById('appointmentPatient');
+            try {
+                const resp = await fetch('/api/patients');
+                const patients = await resp.json();
+                allPatients = patients;
+                patients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.pid;
+                    opt.textContent = `${p.first_name} ${p.last_name} (${p.ssn})`;
+                    patientSelect.appendChild(opt);
+                });
+            } catch {}
+            // Load doctors
+            const doctorSelect = document.getElementById('appointmentDoctor');
+            try {
+                const resp = await fetch('/api/physicians');
+                const doctors = await resp.json();
+                allPhysicians = doctors;
+                doctors.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.physicianid;
+                    opt.textContent = `${d.first_name} ${d.last_name} (ID: ${d.physicianid})`;
+                    doctorSelect.appendChild(opt);
+                });
+            } catch {}
+        }
+
+        function getPatientName(pid) {
+            const p = allPatients.find(x => x.pid == pid);
+            return p ? `${p.first_name} ${p.last_name}` : pid;
+        }
+        function getPhysicianName(physicianid) {
+            const d = allPhysicians.find(x => x.physicianid == physicianid);
+            return d ? `${d.first_name} ${d.last_name}` : physicianid;
+        }
+
+        async function loadAppointmentsTable() {
+            const container = document.getElementById('appointmentsTableContainer');
+            // Ensure we have patient and physician lists
+            if (!allPatients.length) {
+                try {
+                    const resp = await fetch('/api/patients');
+                    allPatients = await resp.json();
+                } catch {}
+            }
+            if (!allPhysicians.length) {
+                try {
+                    const resp = await fetch('/api/physicians');
+                    allPhysicians = await resp.json();
+                } catch {}
+            }
+            try {
+                const resp = await fetch('/api/consultations');
+                const appointments = await resp.json();
+                if (!appointments.length) {
+                    container.innerHTML = '<p class="text-muted">No appointments scheduled.</p>';
+                    return;
+                }
+                // Group by doctor and date
+                const grouped = {};
+                appointments.forEach(a => {
+                    const docId = a.physicianid;
+                    const date = a.date;
+                    if (!grouped[docId]) grouped[docId] = {};
+                    if (!grouped[docId][date]) grouped[docId][date] = [];
+                    grouped[docId][date].push(a);
+                });
+                let html = '';
+                for (const docId in grouped) {
+                    html += `<h6>Doctor: ${getPhysicianName(docId)}</h6>`;
+                    for (const date in grouped[docId]) {
+                        html += `<strong>Date: ${date}</strong><table class="table table-sm table-bordered mb-3"><thead><tr><th>Patient</th><th>Type/Reason</th></tr></thead><tbody>`;
+                        grouped[docId][date].forEach(a => {
+                            html += `<tr><td>${getPatientName(a.pid)}</td><td>${a.type || a.reason || ''}</td></tr>`;
+                        });
+                        html += '</tbody></table>';
+                    }
+                }
+                container.innerHTML = html;
+            } catch {
+                container.innerHTML = '<div class="alert alert-danger">Failed to load appointments.</div>';
+            }
+        }
+
+        async function loadPhysiciansForAddPatient() {
+            const select = document.getElementById('addPrimaryPhysician');
+            if (!select) return;
+            try {
+                const resp = await fetch('/api/physicians');
+                const physicians = await resp.json();
+                physicians.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.physicianid;
+                    opt.textContent = `${p.first_name} ${p.last_name}`;
+                    select.appendChild(opt);
+                });
+            } catch {}
+        }
+
+        // On page load, check for ?ssn=... and open modal if present
+        function getQueryParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
+        }
+        const initialSSN = getQueryParam('ssn');
+        if (initialSSN) {
+            setTimeout(() => showPatientDetails(initialSSN), 500);
+        }
+    </script>
+</body>
+</html> 

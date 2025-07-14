@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .management-card { cursor: pointer; transition: box-shadow 0.2s; }
+        .management-card:hover { box-shadow: 0 0 10px #007bff33; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Consultation Management</h2>
+        <a href="/application" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+    <div id="alertPlaceholder"></div>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#consultationModal">Add Consultation</button>
+        <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
+    </div>
+    <div id="tableContainer">
+        <div class="text-center"><div class="spinner-border"></div> Loading consultations...</div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Consultation -->
+<div class="modal fade" id="consultationModal" tabindex="-1" aria-labelledby="consultationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="consultationModalLabel">Add Consultation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="consultationForm">
+          <div class="mb-3">
+            <label for="patientSelect" class="form-label">Patient</label>
+            <select class="form-select" id="patientSelect" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="physicianSelect" class="form-label">Physician</label>
+            <select class="form-select" id="physicianSelect" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="dateInput" class="form-label">Date</label>
+            <input type="date" class="form-control" id="dateInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="reasonInput" class="form-label">Reason</label>
+            <input type="text" class="form-control" id="reasonInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="notesInput" class="form-label">Notes</label>
+            <textarea class="form-control" id="notesInput" rows="2"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let consultations = [];
+let patients = [];
+let physicians = [];
+let editConsultationKey = null;
+
+// Fetch all data on page load
+window.onload = async function() {
+    await Promise.all([
+        fetchConsultations(),
+        fetchPatients(),
+        fetchPhysicians()
+    ]);
+    renderConsultations();
+    populateDropdowns();
+};
+
+async function fetchConsultations() {
+    try {
+        const res = await fetch('/api/consultations');
+        consultations = await res.json();
+    } catch (e) {
+        showAlert('Failed to load consultations.', 'danger');
+        consultations = [];
+    }
+}
+
+async function fetchPatients() {
+    try {
+        const res = await fetch('/api/patients');
+        patients = await res.json();
+    } catch (e) {
+        showAlert('Failed to load patients.', 'danger');
+        patients = [];
+    }
+}
+
+async function fetchPhysicians() {
+    try {
+        const res = await fetch('/api/physicians');
+        physicians = await res.json();
+    } catch (e) {
+        showAlert('Failed to load physicians.', 'danger');
+        physicians = [];
+    }
+}
+
+function renderConsultations() {
+    const tableContainer = document.getElementById('tableContainer');
+    let filtered = consultations;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    if (search) {
+        filtered = consultations.filter(c =>
+            (getPatientName(c.pid) + getPhysicianName(c.physicianid) + c.date + (c.reason || '') + (c.notes || '')).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        tableContainer.innerHTML = `<div class='alert alert-info'>No consultations found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>Patient</th><th>Physician</th><th>Date</th><th>Reason</th><th>Notes</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const c of filtered) {
+        html += `<tr>
+            <td>${getPatientName(c.pid)}</td>
+            <td>${getPhysicianName(c.physicianid)}</td>
+            <td>${c.date}</td>
+            <td>${c.reason || ''}</td>
+            <td>${c.notes || ''}</td>
+            <td>
+                <button class='btn btn-sm btn-primary me-1' onclick='editConsultation(${c.pid},${c.physicianid},"${c.date}")'>Edit</button>
+                <button class='btn btn-sm btn-danger' onclick='deleteConsultation(${c.pid},${c.physicianid},"${c.date}")'>Delete</button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    tableContainer.innerHTML = html;
+}
+
+document.getElementById('searchInput').addEventListener('input', renderConsultations);
+
+function getPatientName(pid) {
+    const p = patients.find(x => x.pid === pid);
+    return p ? `${p.pfir} ${p.plast}` : pid;
+}
+function getPhysicianName(physicianid) {
+    const p = physicians.find(x => x.physicianid === physicianid);
+    return p ? `${p.first_name} ${p.last_name}` : physicianid;
+}
+
+function populateDropdowns() {
+    const patientSelect = document.getElementById('patientSelect');
+    const physicianSelect = document.getElementById('physicianSelect');
+    patientSelect.innerHTML = patients.map(p => `<option value="${p.pid}">${p.pfir} ${p.plast}</option>`).join('');
+    physicianSelect.innerHTML = physicians.map(p => `<option value="${p.physicianid}">${p.first_name} ${p.last_name}</option>`).join('');
+}
+
+document.getElementById('consultationForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const data = {
+        pid: parseInt(document.getElementById('patientSelect').value),
+        physicianid: parseInt(document.getElementById('physicianSelect').value),
+        date: document.getElementById('dateInput').value,
+        reason: document.getElementById('reasonInput').value,
+        notes: document.getElementById('notesInput').value
+    };
+    try {
+        let res;
+        if (editConsultationKey) {
+            // Edit: use PUT
+            res = await fetch(`/api/consultations/${data.pid}/${data.physicianid}/${data.date}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Add: use POST
+            res = await fetch(`/api/consultations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Consultation saved successfully.', 'success');
+        await fetchConsultations();
+        renderConsultations();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('consultationModal')).hide();
+        e.target.reset();
+        editConsultationKey = null;
+    } catch (err) {
+        showAlert('Failed to save consultation: ' + err, 'danger');
+    }
+};
+
+window.editConsultation = function(pid, physicianid, date) {
+    const c = consultations.find(x => x.pid === pid && x.physicianid === physicianid && x.date === date);
+    if (!c) return;
+    editConsultationKey = { pid, physicianid, date };
+    document.getElementById('patientSelect').value = c.pid;
+    document.getElementById('physicianSelect').value = c.physicianid;
+    document.getElementById('dateInput').value = c.date;
+    document.getElementById('reasonInput').value = c.reason || '';
+    document.getElementById('notesInput').value = c.notes || '';
+    document.getElementById('consultationModalLabel').innerText = 'Edit Consultation';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('consultationModal')).show();
+};
+
+window.deleteConsultation = async function(pid, physicianid, date) {
+    if (!confirm('Delete this consultation?')) return;
+    try {
+        const res = await fetch(`/api/consultations/${pid}/${physicianid}/${date}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Consultation deleted.', 'success');
+        await fetchConsultations();
+        renderConsultations();
+    } catch (err) {
+        showAlert('Failed to delete consultation: ' + err, 'danger');
+    }
+};
+
+function showAlert(msg, type) {
+    const alert = `<div class='alert alert-${type} alert-dismissible fade show' role='alert'>${msg}<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>`;
+    document.getElementById('alertPlaceholder').innerHTML = alert;
+    setTimeout(() => {
+        const alertEl = document.querySelector('.alert');
+        if (alertEl) alertEl.classList.remove('show');
+    }, 4000);
+}
+
+document.getElementById('consultationModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('consultationForm').reset();
+    document.getElementById('consultationModalLabel').innerText = 'Add Consultation';
+    editConsultationKey = null;
+});
+</script>
+</body>
+</html> 

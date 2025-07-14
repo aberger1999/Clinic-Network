@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .management-card { cursor: pointer; transition: box-shadow 0.2s; }
+        .management-card:hover { box-shadow: 0 0 10px #007bff33; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: #f9f9fb; }
+        .table-hover tbody tr:hover { background-color: #e9f5ff; }
+        .sticky-header th { position: sticky; top: 0; background: #f8f9fa; z-index: 2; }
+        .summary-card { min-width: 180px; }
+        @media (max-width: 768px) {
+            .summary-card { min-width: 100px; font-size: 0.9rem; }
+            .table-responsive { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h2>Staff Management</h2>
+        <a href="/application" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+    </div>
+    <div class="row mb-4 g-2">
+        <div class="col summary-card">
+            <div class="card text-bg-primary text-center">
+                <div class="card-body p-2">
+                    <i class="bi bi-person-badge card-icon"></i><br>
+                    <span class="fs-5" id="physicianCount">0</span><br>Physicians
+                </div>
+            </div>
+        </div>
+        <div class="col summary-card">
+            <div class="card text-bg-success text-center">
+                <div class="card-body p-2">
+                    <i class="bi bi-person-vcard card-icon"></i><br>
+                    <span class="fs-5" id="nurseCount">0</span><br>Nurses
+                </div>
+            </div>
+        </div>
+        <div class="col summary-card">
+            <div class="card text-bg-warning text-center">
+                <div class="card-body p-2">
+                    <i class="bi bi-person-video2 card-icon"></i><br>
+                    <span class="fs-5" id="surgeonCount">0</span><br>Surgeons
+                </div>
+            </div>
+        </div>
+        <div class="col summary-card">
+            <div class="card text-bg-secondary text-center">
+                <div class="card-body p-2">
+                    <i class="bi bi-people card-icon"></i><br>
+                    <span class="fs-5" id="supportCount">0</span><br>Support
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="alertPlaceholder"></div>
+    <ul class="nav nav-tabs mb-3" id="staffTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All Staff</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="nurse-tab" data-bs-toggle="tab" data-bs-target="#nurse" type="button" role="tab">Nurses</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="physician-tab" data-bs-toggle="tab" data-bs-target="#physician" type="button" role="tab">Physicians</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="surgeon-tab" data-bs-toggle="tab" data-bs-target="#surgeon" type="button" role="tab">Surgeons</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="support-tab" data-bs-toggle="tab" data-bs-target="#support" type="button" role="tab">Support</button>
+      </li>
+    </ul>
+    <div class="tab-content" id="staffTabsContent">
+      <div class="tab-pane fade show active" id="all" role="tabpanel">
+        <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#staffModal"><i class="bi bi-person-plus"></i> Add Staff</button>
+          <input type="text" id="searchInputAll" class="form-control w-auto" placeholder="Search staff by name, type, or SSN...">
+        </div>
+        <div class="card p-2 table-responsive">
+          <div id="tableContainerAll">
+            <div class="text-center"><div class="spinner-border"></div> Loading staff...</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="nurse" role="tabpanel">
+        <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nurseModal"><i class="bi bi-person-plus"></i> Add Nurse</button>
+          <input type="text" id="searchInputNurse" class="form-control w-auto" placeholder="Search nurses...">
+        </div>
+        <div class="card p-2 table-responsive">
+          <div id="tableContainerNurse">
+            <div class="text-center"><div class="spinner-border"></div> Loading nurses...</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="physician" role="tabpanel">
+        <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#physicianModal"><i class="bi bi-person-plus"></i> Add Physician</button>
+          <input type="text" id="searchInputPhysician" class="form-control w-auto" placeholder="Search physicians...">
+        </div>
+        <div class="card p-2 table-responsive">
+          <div id="tableContainerPhysician">
+            <div class="text-center"><div class="spinner-border"></div> Loading physicians...</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="surgeon" role="tabpanel">
+        <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#surgeonModal"><i class="bi bi-person-plus"></i> Add Surgeon</button>
+          <input type="text" id="searchInputSurgeon" class="form-control w-auto" placeholder="Search surgeons...">
+        </div>
+        <div class="card p-2 table-responsive">
+          <div id="tableContainerSurgeon">
+            <div class="text-center"><div class="spinner-border"></div> Loading surgeons...</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="support" role="tabpanel">
+        <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#staffModal"><i class="bi bi-person-plus"></i> Add Support Staff</button>
+          <input type="text" id="searchInputSupport" class="form-control w-auto" placeholder="Search support staff...">
+        </div>
+        <div class="card p-2 table-responsive">
+          <div id="tableContainerSupport">
+            <div class="text-center"><div class="spinner-border"></div> Loading support staff...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Modal for Add/Edit Staff -->
+<div class="modal fade" id="staffModal" tabindex="-1" aria-labelledby="staffModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staffModalLabel">Add Staff</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body bg-light rounded-3 p-4">
+        <form id="staffForm">
+          <h6 class="mb-3 text-primary">Personal Info</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="firstNameInput" class="form-label">First Name</label>
+              <input type="text" class="form-control" id="firstNameInput" required placeholder="First Name">
+            </div>
+            <div class="col-md-6">
+              <label for="lastNameInput" class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="lastNameInput" required placeholder="Last Name">
+            </div>
+            <div class="col-md-6">
+              <label for="ssnInput" class="form-label">SSN</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-credit-card-2-front"></i></span>
+                <input type="text" class="form-control" id="ssnInput" required maxlength="11" placeholder="XXX-XX-XXXX" pattern="^\d{3}-\d{2}-\d{4}$" title="Format: XXX-XX-XXXX">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="salaryInput" class="form-label">Salary</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
+                <input type="number" class="form-control" id="salaryInput" min="0" placeholder="Salary">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="genderInput" class="form-label">Gender</label>
+              <select class="form-select" id="genderInput" required>
+                <option value="">Select</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="employeeTypeInput" class="form-label">Type</label>
+              <select class="form-select" id="employeeTypeInput" required>
+                <option value="">Select</option>
+                <option value="Physician">Physician</option>
+                <option value="Nurse">Nurse</option>
+                <option value="Surgeon">Surgeon</option>
+                <option value="Support">Support</option>
+              </select>
+            </div>
+          </div>
+          <h6 class="mb-3 text-primary mt-4">Contact Info</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="phoneInput" class="form-label">Phone</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                <input type="text" class="form-control" id="phoneInput" required placeholder="Phone" pattern="^\\(\d{3}\\) \d{3}-\d{4}$" title="Format: (XXX) XXX-XXXX">
+              </div>
+            </div>
+          </div>
+          <h6 class="mb-3 text-primary mt-4">Address</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="streetInput" class="form-label">Street</label>
+              <input type="text" class="form-control" id="streetInput" required placeholder="Street">
+            </div>
+            <div class="col-md-6">
+              <label for="cityInput" class="form-label">City</label>
+              <input type="text" class="form-control" id="cityInput" required placeholder="City">
+            </div>
+            <div class="col-md-6">
+              <label for="stateInput" class="form-label">State</label>
+              <select class="form-select" id="stateInput" required>
+                <option value="">State</option>
+                <option value="AL">AL</option>
+                <option value="AK">AK</option>
+                <option value="AZ">AZ</option>
+                <option value="AR">AR</option>
+                <option value="CA">CA</option>
+                <option value="CO">CO</option>
+                <option value="CT">CT</option>
+                <option value="DE">DE</option>
+                <option value="FL">FL</option>
+                <option value="GA">GA</option>
+                <option value="HI">HI</option>
+                <option value="ID">ID</option>
+                <option value="IL">IL</option>
+                <option value="IN">IN</option>
+                <option value="IA">IA</option>
+                <option value="KS">KS</option>
+                <option value="KY">KY</option>
+                <option value="LA">LA</option>
+                <option value="ME">ME</option>
+                <option value="MD">MD</option>
+                <option value="MA">MA</option>
+                <option value="MI">MI</option>
+                <option value="MN">MN</option>
+                <option value="MS">MS</option>
+                <option value="MO">MO</option>
+                <option value="MT">MT</option>
+                <option value="NE">NE</option>
+                <option value="NV">NV</option>
+                <option value="NH">NH</option>
+                <option value="NJ">NJ</option>
+                <option value="NM">NM</option>
+                <option value="NY">NY</option>
+                <option value="NC">NC</option>
+                <option value="ND">ND</option>
+                <option value="OH">OH</option>
+                <option value="OK">OK</option>
+                <option value="OR">OR</option>
+                <option value="PA">PA</option>
+                <option value="RI">RI</option>
+                <option value="SC">SC</option>
+                <option value="SD">SD</option>
+                <option value="TN">TN</option>
+                <option value="TX">TX</option>
+                <option value="UT">UT</option>
+                <option value="VT">VT</option>
+                <option value="VA">VA</option>
+                <option value="WA">WA</option>
+                <option value="WV">WV</option>
+                <option value="WI">WI</option>
+                <option value="WY">WY</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="zipInput" class="form-label">ZIP</label>
+              <input type="text" class="form-control" id="zipInput" placeholder="ZIP" pattern="^\d{5}(-\d{4})?$" title="Format: 12345 or 12345-6789">
+            </div>
+          </div>
+          <div id="typeFields"></div>
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary w-100 py-2 fs-5"><i class="bi bi-save"></i> Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let staff = [];
+let nurses = [];
+let physicians = [];
+let surgeons = [];
+let supportStaff = [];
+let editStaffId = null;
+let editNurseId = null;
+let editPhysicianId = null;
+let editSurgeonId = null;
+
+// --- Inline editing logic ---
+let inlineEditId = null;
+let inlineEditType = null;
+let inlineEditData = {};
+
+function updateStaffCounts() {
+    document.getElementById('physicianCount').textContent = physicians.length;
+    document.getElementById('nurseCount').textContent = nurses.length;
+    document.getElementById('surgeonCount').textContent = surgeons.length;
+    document.getElementById('supportCount').textContent = staff.filter(s => s.employeetype === 'Support').length;
+}
+
+window.onload = async function() {
+    await Promise.all([
+        fetchStaff(),
+        fetchNurses(),
+        fetchPhysicians(),
+        fetchSurgeons()
+    ]);
+    supportStaff = staff.filter(s => s.employeetype === 'Support');
+    renderAllStaff();
+    renderNurses();
+    renderPhysicians();
+    renderSurgeons();
+    renderSupportStaff();
+    updateStaffCounts();
+};
+
+// Fetch functions
+async function fetchStaff() {
+    try {
+        const res = await fetch('/api/employees');
+        staff = await res.json();
+    } catch (e) {
+        showAlert('Failed to load staff.', 'danger');
+        staff = [];
+    }
+}
+async function fetchNurses() {
+    try {
+        const res = await fetch('/api/nurses');
+        nurses = await res.json();
+    } catch (e) {
+        showAlert('Failed to load nurses.', 'danger');
+        nurses = [];
+    }
+}
+async function fetchPhysicians() {
+    try {
+        const res = await fetch('/api/physicians');
+        physicians = await res.json();
+    } catch (e) {
+        showAlert('Failed to load physicians.', 'danger');
+        physicians = [];
+    }
+}
+async function fetchSurgeons() {
+    try {
+        const res = await fetch('/api/surgeons');
+        surgeons = await res.json();
+    } catch (e) {
+        showAlert('Failed to load surgeons.', 'danger');
+        surgeons = [];
+    }
+}
+
+// Render functions
+function renderAllStaff() {
+    const container = document.getElementById('tableContainerAll');
+    let filtered = staff;
+    const search = document.getElementById('searchInputAll').value?.toLowerCase() || '';
+    if (search) {
+        filtered = staff.filter(s =>
+            (s.empid + s.first_name + s.last_name + s.employeetype + s.phone + s.ssn).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        container.innerHTML = `<div class='alert alert-info'>No staff found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>EmpID</th><th>Name</th><th>Type</th><th>Phone</th><th>SSN</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const s of filtered) {
+        if (inlineEditId === s.empid && inlineEditType === 'All') {
+            html += `<tr>
+                <td>${s.empid}</td>
+                <td><input type='text' class='form-control' id='editFirstName' value='${s.first_name}'> <input type='text' class='form-control mt-1' id='editLastName' value='${s.last_name}'></td>
+                <td>${s.employeetype}</td>
+                <td><input type='text' class='form-control' id='editPhone' value='${s.phone}'></td>
+                <td><input type='text' class='form-control' id='editSSN' value='${s.ssn}'></td>
+                <td>
+                    <button class='btn btn-sm btn-success me-1' onclick='saveInlineEditStaff(${s.empid})'>Save</button>
+                    <button class='btn btn-sm btn-secondary' onclick='cancelInlineEdit()'>Cancel</button>
+                </td>
+            </tr>`;
+        } else {
+            html += `<tr>
+                <td>${s.empid}</td>
+                <td>${s.first_name} ${s.last_name}</td>
+                <td>${s.employeetype}</td>
+                <td>${s.phone}</td>
+                <td>${s.ssn}</td>
+                <td>
+                    <button class='btn btn-sm btn-primary me-1' onclick='editInlineStaff(${s.empid})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteStaff(${s.empid})'>Delete</button>
+                </td>
+            </tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderNurses() {
+    const container = document.getElementById('tableContainerNurse');
+    let filtered = nurses;
+    const search = document.getElementById('searchInputNurse').value?.toLowerCase() || '';
+    if (search) {
+        filtered = nurses.filter(n =>
+            (n.nurseid + getEmployeeName(n.nurseid) + n.grade + n.years).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        container.innerHTML = `<div class='alert alert-info'>No nurses found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>NurseID</th><th>Name</th><th>Grade</th><th>Years</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const n of filtered) {
+        if (inlineEditId === n.nurseid && inlineEditType === 'Nurse') {
+            html += `<tr>
+                <td>${n.nurseid}</td>
+                <td><input type='text' class='form-control' id='editNurseName' value='${getEmployeeName(n.nurseid)}' disabled></td>
+                <td><input type='text' class='form-control' id='editGrade' value='${n.grade}'></td>
+                <td><input type='number' class='form-control' id='editYears' value='${n.years}'></td>
+                <td>
+                    <button class='btn btn-sm btn-success me-1' onclick='saveInlineEditNurse(${n.nurseid})'>Save</button>
+                    <button class='btn btn-sm btn-secondary' onclick='cancelInlineEdit()'>Cancel</button>
+                </td>
+            </tr>`;
+        } else {
+            html += `<tr>
+                <td>${n.nurseid}</td>
+                <td>${getEmployeeName(n.nurseid)}</td>
+                <td>${n.grade}</td>
+                <td>${n.years}</td>
+                <td>
+                    <button class='btn btn-sm btn-primary me-1' onclick='editInlineNurse(${n.nurseid})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteNurse(${n.nurseid})'>Delete</button>
+                </td>
+            </tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderPhysicians() {
+    const container = document.getElementById('tableContainerPhysician');
+    let filtered = physicians;
+    const search = document.getElementById('searchInputPhysician').value?.toLowerCase() || '';
+    if (search) {
+        filtered = physicians.filter(p =>
+            (p.physicianid + getEmployeeName(p.physicianid) + p.specialty + p.type).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        container.innerHTML = `<div class='alert alert-info'>No physicians found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>PhysicianID</th><th>Name</th><th>Specialty</th><th>Type</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const p of filtered) {
+        if (inlineEditId === p.physicianid && inlineEditType === 'Physician') {
+            html += `<tr>
+                <td>${p.physicianid}</td>
+                <td><input type='text' class='form-control' id='editPhysicianName' value='${getEmployeeName(p.physicianid)}' disabled></td>
+                <td><input type='text' class='form-control' id='editSpecialty' value='${p.specialty}'></td>
+                <td><input type='text' class='form-control' id='editPhysicianType' value='${p.type}'></td>
+                <td>
+                    <button class='btn btn-sm btn-success me-1' onclick='saveInlineEditPhysician(${p.physicianid})'>Save</button>
+                    <button class='btn btn-sm btn-secondary' onclick='cancelInlineEdit()'>Cancel</button>
+                </td>
+            </tr>`;
+        } else {
+            html += `<tr>
+                <td>${p.physicianid}</td>
+                <td>${getEmployeeName(p.physicianid)}</td>
+                <td>${p.specialty}</td>
+                <td>${p.type}</td>
+                <td>
+                    <button class='btn btn-sm btn-primary me-1' onclick='editInlinePhysician(${p.physicianid})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deletePhysician(${p.physicianid})'>Delete</button>
+                </td>
+            </tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderSurgeons() {
+    const container = document.getElementById('tableContainerSurgeon');
+    let filtered = surgeons;
+    const search = document.getElementById('searchInputSurgeon').value?.toLowerCase() || '';
+    if (search) {
+        filtered = surgeons.filter(s =>
+            (s.surgeonid + getEmployeeName(s.surgeonid) + s.specialty + s.contracttype).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        container.innerHTML = `<div class='alert alert-info'>No surgeons found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>SurgeonID</th><th>Name</th><th>Specialty</th><th>Contract Type</th><th>Duration</th><th>Amount</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const s of filtered) {
+        if (inlineEditId === s.surgeonid && inlineEditType === 'Surgeon') {
+            html += `<tr>
+                <td>${s.surgeonid}</td>
+                <td><input type='text' class='form-control' id='editSurgeonName' value='${getEmployeeName(s.surgeonid)}' disabled></td>
+                <td><input type='text' class='form-control' id='editSurgeonSpecialty' value='${s.specialty}'></td>
+                <td><input type='text' class='form-control' id='editContractType' value='${s.contracttype}'></td>
+                <td><input type='number' class='form-control' id='editContractDuration' value='${s.contractduration}'></td>
+                <td><input type='number' class='form-control' id='editContractAmount' value='${s.contractamount}'></td>
+                <td>
+                    <button class='btn btn-sm btn-success me-1' onclick='saveInlineEditSurgeon(${s.surgeonid})'>Save</button>
+                    <button class='btn btn-sm btn-secondary' onclick='cancelInlineEdit()'>Cancel</button>
+                </td>
+            </tr>`;
+        } else {
+            html += `<tr>
+                <td>${s.surgeonid}</td>
+                <td>${getEmployeeName(s.surgeonid)}</td>
+                <td>${s.specialty}</td>
+                <td>${s.contracttype}</td>
+                <td>${s.contractduration}</td>
+                <td>${s.contractamount}</td>
+                <td>
+                    <button class='btn btn-sm btn-primary me-1' onclick='editInlineSurgeon(${s.surgeonid})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteSurgeon(${s.surgeonid})'>Delete</button>
+                </td>
+            </tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderSupportStaff() {
+    const container = document.getElementById('tableContainerSupport');
+    let filtered = staff.filter(s => s.employeetype === 'Support');
+    const search = document.getElementById('searchInputSupport').value?.toLowerCase() || '';
+    if (search) {
+        filtered = filtered.filter(s =>
+            (s.empid + s.first_name + s.last_name + s.phone + s.ssn).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        container.innerHTML = `<div class='alert alert-info'>No support staff found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>EmpID</th><th>Name</th><th>Phone</th><th>SSN</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const s of filtered) {
+        if (inlineEditId === s.empid && inlineEditType === 'Support') {
+            html += `<tr>
+                <td>${s.empid}</td>
+                <td><input type='text' class='form-control' id='editFirstName' value='${s.first_name}'> <input type='text' class='form-control mt-1' id='editLastName' value='${s.last_name}'></td>
+                <td><input type='text' class='form-control' id='editPhone' value='${s.phone}'></td>
+                <td><input type='text' class='form-control' id='editSSN' value='${s.ssn}'></td>
+                <td>
+                    <button class='btn btn-sm btn-success me-1' onclick='saveInlineEditSupport(${s.empid})'>Save</button>
+                    <button class='btn btn-sm btn-secondary' onclick='cancelInlineEdit()'>Cancel</button>
+                </td>
+            </tr>`;
+        } else {
+            html += `<tr>
+                <td>${s.empid}</td>
+                <td>${s.first_name} ${s.last_name}</td>
+                <td>${s.phone}</td>
+                <td>${s.ssn}</td>
+                <td>
+                    <button class='btn btn-sm btn-primary me-1' onclick='editInlineSupport(${s.empid})'>Edit</button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteStaff(${s.empid})'>Delete</button>
+                </td>
+            </tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function getEmployeeName(empid) {
+    const e = staff.find(x => x.empid === empid);
+    return e ? `${e.first_name} ${e.last_name}` : empid;
+}
+
+// Search listeners
+['All', 'Nurse', 'Physician', 'Surgeon', 'Support'].forEach(type => {
+    document.getElementById('searchInput' + type).addEventListener('input', () => {
+        if (type === 'All') renderAllStaff();
+        if (type === 'Nurse') renderNurses();
+        if (type === 'Physician') renderPhysicians();
+        if (type === 'Surgeon') renderSurgeons();
+        if (type === 'Support') renderSupportStaff();
+    });
+});
+
+// Delete functions
+window.deleteStaff = async function(empid) {
+    if (!confirm('Delete this staff member?')) return;
+    try {
+        const res = await fetch(`/api/employees/${empid}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Staff deleted.', 'success');
+        await fetchStaff();
+        renderAllStaff();
+    } catch (err) {
+        showAlert('Failed to delete staff: ' + err, 'danger');
+    }
+};
+window.deleteNurse = async function(nurseid) {
+    if (!confirm('Delete this nurse?')) return;
+    try {
+        const res = await fetch(`/api/nurses/${nurseid}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Nurse deleted.', 'success');
+        await fetchNurses();
+        renderNurses();
+    } catch (err) {
+        showAlert('Failed to delete nurse: ' + err, 'danger');
+    }
+};
+window.deletePhysician = async function(physicianid) {
+    if (!confirm('Delete this physician?')) return;
+    try {
+        const res = await fetch(`/api/physicians/${physicianid}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Physician deleted.', 'success');
+        await fetchPhysicians();
+        renderPhysicians();
+    } catch (err) {
+        showAlert('Failed to delete physician: ' + err, 'danger');
+    }
+};
+window.deleteSurgeon = async function(surgeonid) {
+    if (!confirm('Delete this surgeon?')) return;
+    try {
+        const res = await fetch(`/api/surgeons/${surgeonid}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Surgeon deleted.', 'success');
+        await fetchSurgeons();
+        renderSurgeons();
+    } catch (err) {
+        showAlert('Failed to delete surgeon: ' + err, 'danger');
+    }
+};
+
+function showAlert(msg, type) {
+    const alert = `<div class='alert alert-${type} alert-dismissible fade show' role='alert'>${msg}<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>`;
+    document.getElementById('alertPlaceholder').innerHTML = alert;
+    setTimeout(() => {
+        const alertEl = document.querySelector('.alert');
+        if (alertEl) alertEl.classList.remove('show');
+    }, 4000);
+}
+
+// Dynamic type fields for main staff modal
+const typeFieldsDiv = document.getElementById('typeFields');
+document.getElementById('employeeTypeInput').addEventListener('change', function() {
+    renderTypeFields(this.value);
+});
+function renderTypeFields(type) {
+    let html = '';
+    if (type === 'Nurse') {
+        html += `<div class='mb-3'><label class='form-label'>Grade</label><input type='text' class='form-control' id='gradeInput' required></div>`;
+        html += `<div class='mb-3'><label class='form-label'>Years</label><input type='number' class='form-control' id='yearsInput' required min='0'></div>`;
+    } else if (type === 'Physician') {
+        html += `<div class='mb-3'><label class='form-label'>Specialty</label><input type='text' class='form-control' id='specialtyInput' required></div>`;
+        html += `<div class='mb-3'><label class='form-label'>Type</label><input type='text' class='form-control' id='physicianTypeInput' required></div>`;
+    } else if (type === 'Surgeon') {
+        html += `<div class='mb-3'><label class='form-label'>Specialty</label><input type='text' class='form-control' id='surgeonSpecialtyInput' required></div>`;
+        html += `<div class='mb-3'><label class='form-label'>Contract Type</label><input type='text' class='form-control' id='contractTypeInput' required></div>`;
+        html += `<div class='mb-3'><label class='form-label'>Contract Duration</label><input type='number' class='form-control' id='contractDurationInput' required min='0'></div>`;
+        html += `<div class='mb-3'><label class='form-label'>Contract Amount</label><input type='number' class='form-control' id='contractAmountInput' min='0'></div>`;
+    }
+    typeFieldsDiv.innerHTML = html;
+}
+
+// Add Staff
+const staffForm = document.getElementById('staffForm');
+const originalStaffFormSubmit = staffForm.onsubmit;
+staffForm.onsubmit = async function(e) {
+    e.preventDefault();
+    const type = document.getElementById('employeeTypeInput').value;
+    const data = {
+        first_name: document.getElementById('firstNameInput').value,
+        last_name: document.getElementById('lastNameInput').value,
+        ssn: document.getElementById('ssnInput').value,
+        salary: parseFloat(document.getElementById('salaryInput').value) || null,
+        gender: document.getElementById('genderInput').value,
+        employeetype: type,
+        phone: document.getElementById('phoneInput').value,
+        street: document.getElementById('streetInput').value,
+        city: document.getElementById('cityInput').value,
+        state: document.getElementById('stateInput').value,
+        zip: document.getElementById('zipInput').value
+    };
+    try {
+        let empid = editStaffId;
+        let res;
+        if (editStaffId) {
+            // Edit employee
+            res = await fetch(`/api/employees/${empid}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            // Edit type-specific
+            if (type === 'Nurse') {
+                const nurseData = {
+                    grade: document.getElementById('gradeInput').value,
+                    years: parseInt(document.getElementById('yearsInput').value)
+                };
+                let nres = await fetch(`/api/nurses/${empid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nurseData)
+                });
+                if (!nres.ok) throw new Error(await nres.text());
+            } else if (type === 'Physician') {
+                const physicianData = {
+                    specialty: document.getElementById('specialtyInput').value,
+                    type: document.getElementById('physicianTypeInput').value
+                };
+                let pres = await fetch(`/api/physicians/${empid}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(physicianData)
+                });
+                if (!pres.ok) throw new Error(await pres.text());
+            } else if (type === 'Surgeon') {
+                const surgeonData = {
+                    specialty: document.getElementById('surgeonSpecialtyInput').value,
+                    contracttype: document.getElementById('contractTypeInput').value,
+                    contractduration: parseInt(document.getElementById('contractDurationInput').value),
+                    contractamount: parseFloat(document.getElementById('contractAmountInput').value) || null
+                };
+                let sres = await fetch(`/api/surgeons/${empid}`, {
+                    method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(surgeonData)
+                });
+                if (!sres.ok) throw new Error(await sres.text());
+            }
+        } else {
+            // Add new employee
+            // Map to backend keys
+            const payload = {
+                First_Name: data.first_name,
+                Last_Name: data.last_name,
+                SSN: data.ssn,
+                Salary: data.salary,
+                Gender: data.gender,
+                EmployeeType: data.employeetype,
+                Phone: data.phone,
+                Street: data.street,
+                City: data.city,
+                State: data.state,
+                Zip: data.zip
+            };
+            const response = await fetch('/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                showAlert(err.message || 'Failed to add staff.', 'danger');
+                return;
+            }
+            const result = await response.json();
+            empid = result.EmpID;
+            // Now add to type-specific table if needed
+            if (type === 'Nurse') {
+                const nurseData = {
+                    NurseID: empid,
+                    Grade: document.getElementById('gradeInput').value,
+                    Years: parseInt(document.getElementById('yearsInput').value)
+                };
+                const nurseResp = await fetch('/api/nurses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nurseData)
+                });
+                if (!nurseResp.ok) {
+                    showAlert('Failed to add nurse details.', 'danger');
+                    return;
+                }
+            } else if (type === 'Physician') {
+                const physicianData = {
+                    PhysicianID: empid,
+                    Specialty: document.getElementById('specialtyInput').value,
+                    Type: document.getElementById('physicianTypeInput').value
+                };
+                const physicianResp = await fetch('/api/physicians', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(physicianData)
+                });
+                if (!physicianResp.ok) {
+                    showAlert('Failed to add physician details.', 'danger');
+                    return;
+                }
+            } else if (type === 'Surgeon') {
+                const surgeonData = {
+                    SurgeonID: empid,
+                    Specialty: document.getElementById('surgeonSpecialtyInput').value,
+                    ContractType: document.getElementById('contractTypeInput').value,
+                    ContractDuration: parseInt(document.getElementById('contractDurationInput').value),
+                    ContractAmount: parseFloat(document.getElementById('contractAmountInput').value) || null
+                };
+                const surgeonResp = await fetch('/api/surgeons', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(surgeonData)
+                });
+                if (!surgeonResp.ok) {
+                    showAlert('Failed to add surgeon details.', 'danger');
+                    return;
+                }
+            }
+            showAlert('Staff added successfully.', 'success');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('staffModal')).hide();
+            staffForm.reset();
+            typeFieldsDiv.innerHTML = '';
+            editStaffId = null;
+            await refreshStaffAndCounts();
+            return;
+        }
+        showAlert('Staff updated successfully.', 'success');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('staffModal')).hide();
+        staffForm.reset();
+        typeFieldsDiv.innerHTML = '';
+        editStaffId = null;
+        await refreshStaffAndCounts();
+    } catch (err) {
+        showAlert('Failed to update staff: ' + err, 'danger');
+    }
+};
+
+document.getElementById('staffModal').addEventListener('hidden.bs.modal', function() {
+    staffForm.reset();
+    typeFieldsDiv.innerHTML = '';
+    editStaffId = null;
+    document.getElementById('staffModalLabel').innerText = 'Add Staff';
+});
+
+// Edit logic
+window.editStaff = async function(empid) {
+    const s = staff.find(x => x.empid === empid);
+    if (!s) return;
+    editStaffId = empid;
+    // Pre-fill form
+    document.getElementById('firstNameInput').value = s.first_name;
+    document.getElementById('lastNameInput').value = s.last_name;
+    document.getElementById('ssnInput').value = s.ssn;
+    document.getElementById('salaryInput').value = s.salary || '';
+    document.getElementById('genderInput').value = s.gender;
+    document.getElementById('employeeTypeInput').value = s.employeetype;
+    document.getElementById('phoneInput').value = s.phone;
+    document.getElementById('streetInput').value = s.street;
+    document.getElementById('cityInput').value = s.city;
+    document.getElementById('stateInput').value = s.state;
+    document.getElementById('zipInput').value = s.zip;
+    renderTypeFields(s.employeetype);
+    // Fetch and fill type-specific fields
+    if (s.employeetype === 'Nurse') {
+        const n = nurses.find(x => x.nurseid === empid);
+        if (n) {
+            document.getElementById('gradeInput').value = n.grade;
+            document.getElementById('yearsInput').value = n.years;
+        }
+    } else if (s.employeetype === 'Physician') {
+        const p = physicians.find(x => x.physicianid === empid);
+        if (p) {
+            document.getElementById('specialtyInput').value = p.specialty;
+            document.getElementById('physicianTypeInput').value = p.type;
+        }
+    } else if (s.employeetype === 'Surgeon') {
+        const su = surgeons.find(x => x.surgeonid === empid);
+        if (su) {
+            document.getElementById('surgeonSpecialtyInput').value = su.specialty;
+            document.getElementById('contractTypeInput').value = su.contracttype;
+            document.getElementById('contractDurationInput').value = su.contractduration;
+            document.getElementById('contractAmountInput').value = su.contractamount;
+        }
+    }
+    document.getElementById('staffModalLabel').innerText = 'Edit Staff';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('staffModal')).show();
+};
+window.editNurse = function(nurseid) { window.editStaff(nurseid); };
+window.editPhysician = function(physicianid) { window.editStaff(physicianid); };
+window.editSurgeon = function(surgeonid) { window.editStaff(surgeonid); };
+
+// Inline editing logic
+window.editInlineStaff = function(empid) {
+    inlineEditId = empid;
+    inlineEditType = 'All';
+    renderAllStaff();
+};
+window.cancelInlineEdit = function() {
+    inlineEditId = null;
+    inlineEditType = null;
+    renderAllStaff();
+    renderNurses();
+    renderPhysicians();
+    renderSurgeons();
+};
+window.saveInlineEditStaff = async function(empid) {
+    const s = staff.find(x => x.empid === empid);
+    if (!s) return;
+    const data = {
+        first_name: document.getElementById('editFirstName').value,
+        last_name: document.getElementById('editLastName').value,
+        phone: document.getElementById('editPhone').value,
+        ssn: document.getElementById('editSSN').value
+    };
+    try {
+        let res = await fetch(`/api/employees/${empid}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...s, ...data })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Staff updated successfully.', 'success');
+        inlineEditId = null;
+        inlineEditType = null;
+        await fetchStaff();
+        renderAllStaff();
+    } catch (err) {
+        showAlert('Failed to update staff: ' + err, 'danger');
+    }
+};
+
+// Inline editing for Nurses
+window.editInlineNurse = function(nurseid) {
+    inlineEditId = nurseid;
+    inlineEditType = 'Nurse';
+    renderNurses();
+};
+window.saveInlineEditNurse = async function(nurseid) {
+    const n = nurses.find(x => x.nurseid === nurseid);
+    if (!n) return;
+    const data = {
+        grade: document.getElementById('editGrade').value,
+        years: parseInt(document.getElementById('editYears').value)
+    };
+    try {
+        let res = await fetch(`/api/nurses/${nurseid}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...n, ...data })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Nurse updated successfully.', 'success');
+        inlineEditId = null;
+        inlineEditType = null;
+        await fetchNurses();
+        renderNurses();
+    } catch (err) {
+        showAlert('Failed to update nurse: ' + err, 'danger');
+    }
+};
+
+// Inline editing for Physicians
+window.editInlinePhysician = function(physicianid) {
+    inlineEditId = physicianid;
+    inlineEditType = 'Physician';
+    renderPhysicians();
+};
+window.saveInlineEditPhysician = async function(physicianid) {
+    const p = physicians.find(x => x.physicianid === physicianid);
+    if (!p) return;
+    const data = {
+        specialty: document.getElementById('editSpecialty').value,
+        type: document.getElementById('editPhysicianType').value
+    };
+    try {
+        let res = await fetch(`/api/physicians/${physicianid}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...p, ...data })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Physician updated successfully.', 'success');
+        inlineEditId = null;
+        inlineEditType = null;
+        await fetchPhysicians();
+        renderPhysicians();
+    } catch (err) {
+        showAlert('Failed to update physician: ' + err, 'danger');
+    }
+};
+
+// Inline editing for Surgeons
+window.editInlineSurgeon = function(surgeonid) {
+    inlineEditId = surgeonid;
+    inlineEditType = 'Surgeon';
+    renderSurgeons();
+};
+window.saveInlineEditSurgeon = async function(surgeonid) {
+    const s = surgeons.find(x => x.surgeonid === surgeonid);
+    if (!s) return;
+    const data = {
+        specialty: document.getElementById('editSurgeonSpecialty').value,
+        contracttype: document.getElementById('editContractType').value,
+        contractduration: parseInt(document.getElementById('editContractDuration').value),
+        contractamount: parseFloat(document.getElementById('editContractAmount').value) || null
+    };
+    try {
+        let res = await fetch(`/api/surgeons/${surgeonid}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...s, ...data })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Surgeon updated successfully.', 'success');
+        inlineEditId = null;
+        inlineEditType = null;
+        await fetchSurgeons();
+        renderSurgeons();
+    } catch (err) {
+        showAlert('Failed to update surgeon: ' + err, 'danger');
+    }
+};
+
+// Inline editing for Support
+window.editInlineSupport = function(empid) {
+    inlineEditId = empid;
+    inlineEditType = 'Support';
+    renderSupportStaff();
+};
+window.saveInlineEditSupport = async function(empid) {
+    const s = staff.find(x => x.empid === empid);
+    if (!s) return;
+    const data = {
+        first_name: document.getElementById('editFirstName').value,
+        last_name: document.getElementById('editLastName').value,
+        phone: document.getElementById('editPhone').value,
+        ssn: document.getElementById('editSSN').value
+    };
+    try {
+        let res = await fetch(`/api/employees/${empid}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...s, ...data })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Support staff updated successfully.', 'success');
+        inlineEditId = null;
+        inlineEditType = null;
+        await fetchStaff();
+        renderSupportStaff();
+    } catch (err) {
+        showAlert('Failed to update support staff: ' + err, 'danger');
+    }
+};
+
+async function refreshStaffAndCounts() {
+    await Promise.all([fetchStaff(), fetchNurses(), fetchPhysicians(), fetchSurgeons()]);
+    renderAllStaff();
+    renderNurses();
+    renderPhysicians();
+    renderSurgeons();
+    renderSupportStaff();
+    updateStaffCounts();
+}
+</script>
+</body>
+</html> 

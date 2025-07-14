@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Clinic Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Clinic Management</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#clinicModal">Add Clinic</button>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="clinicsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Clinics will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Clinic Modal -->
+    <div class="modal fade" id="clinicModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add/Edit Clinic</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="clinicForm" class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Street</label>
+                            <input type="text" class="form-control" name="street">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" name="city">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <select class="form-select" name="state" required>
+                                <option value="">State</option>
+                                <option value="AL">AL</option>
+                                <option value="AK">AK</option>
+                                <option value="AZ">AZ</option>
+                                <option value="AR">AR</option>
+                                <option value="CA">CA</option>
+                                <option value="CO">CO</option>
+                                <option value="CT">CT</option>
+                                <option value="DE">DE</option>
+                                <option value="FL">FL</option>
+                                <option value="GA">GA</option>
+                                <option value="HI">HI</option>
+                                <option value="ID">ID</option>
+                                <option value="IL">IL</option>
+                                <option value="IN">IN</option>
+                                <option value="IA">IA</option>
+                                <option value="KS">KS</option>
+                                <option value="KY">KY</option>
+                                <option value="LA">LA</option>
+                                <option value="ME">ME</option>
+                                <option value="MD">MD</option>
+                                <option value="MA">MA</option>
+                                <option value="MI">MI</option>
+                                <option value="MN">MN</option>
+                                <option value="MS">MS</option>
+                                <option value="MO">MO</option>
+                                <option value="MT">MT</option>
+                                <option value="NE">NE</option>
+                                <option value="NV">NV</option>
+                                <option value="NH">NH</option>
+                                <option value="NJ">NJ</option>
+                                <option value="NM">NM</option>
+                                <option value="NY">NY</option>
+                                <option value="NC">NC</option>
+                                <option value="ND">ND</option>
+                                <option value="OH">OH</option>
+                                <option value="OK">OK</option>
+                                <option value="OR">OR</option>
+                                <option value="PA">PA</option>
+                                <option value="RI">RI</option>
+                                <option value="SC">SC</option>
+                                <option value="SD">SD</option>
+                                <option value="TN">TN</option>
+                                <option value="TX">TX</option>
+                                <option value="UT">UT</option>
+                                <option value="VT">VT</option>
+                                <option value="VA">VA</option>
+                                <option value="WA">WA</option>
+                                <option value="WV">WV</option>
+                                <option value="WI">WI</option>
+                                <option value="WY">WY</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">ZIP</label>
+                            <input type="text" class="form-control" name="zip" pattern="^\d{5}(-\d{4})?$" title="Format: 12345 or 12345-6789">
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                    <div id="clinicFormStatus" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let editingClinicId = null;
+    function loadClinics() {
+        fetch('/api/clinics')
+            .then(res => res.json())
+            .then(clinics => {
+                const tbody = document.querySelector('#clinicsTable tbody');
+                tbody.innerHTML = '';
+                clinics.forEach(clinic => {
+                    const address = [clinic.street, clinic.city, clinic.state, clinic.zip].filter(Boolean).join(', ');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${clinic.clinic_id}</td>
+                        <td>${clinic.name}</td>
+                        <td>${address}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-1" data-action="edit" data-id="${clinic.clinic_id}">Edit</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(() => {
+                const tbody = document.querySelector('#clinicsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="4" class="text-danger">Failed to load clinics.</td></tr>';
+            });
+    }
+
+    // Handle add/edit form submit
+    document.getElementById('clinicForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = Object.fromEntries(new FormData(form).entries());
+        let statusDiv = document.getElementById('clinicFormStatus');
+        statusDiv.innerHTML = '';
+        try {
+            let res;
+            if (editingClinicId) {
+                res = await fetch(`/api/clinics/${editingClinicId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                res = await fetch('/api/clinics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            if (!res.ok) throw await res.json();
+            var modal = bootstrap.Modal.getInstance(document.getElementById('clinicModal'));
+            if (modal) modal.hide();
+            form.reset();
+            editingClinicId = null;
+            document.querySelector('.modal-title').textContent = 'Add/Edit Clinic';
+            loadClinics();
+        } catch (err) {
+            statusDiv.innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to save clinic.'}</div>`;
+        }
+    });
+
+    // Handle edit button click
+    document.getElementById('clinicsTable').addEventListener('click', function(e) {
+        if (e.target.matches('button[data-action="edit"]')) {
+            const clinicId = e.target.getAttribute('data-id');
+            fetch(`/api/clinics/${clinicId}`)
+                .then(res => res.json())
+                .then(clinic => {
+                    const form = document.getElementById('clinicForm');
+                    form.name.value = clinic.name || '';
+                    form.street.value = clinic.street || '';
+                    form.city.value = clinic.city || '';
+                    form.state.value = clinic.state || '';
+                    form.zip.value = clinic.zip || '';
+                    editingClinicId = clinicId;
+                    document.querySelector('.modal-title').textContent = 'Edit Clinic';
+                    var modal = new bootstrap.Modal(document.getElementById('clinicModal'));
+                    modal.show();
+                });
+        }
+    });
+
+    // Reset modal on open for add
+    document.getElementById('clinicModal').addEventListener('show.bs.modal', function() {
+        if (!editingClinicId) {
+            document.getElementById('clinicForm').reset();
+            document.querySelector('.modal-title').textContent = 'Add/Edit Clinic';
+        }
+        document.getElementById('clinicFormStatus').innerHTML = '';
+    });
+
+    loadClinics();
+});
+</script>
+{% endblock %} 

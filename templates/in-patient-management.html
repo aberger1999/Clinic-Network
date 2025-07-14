@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Patient Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table-actions { white-space: nowrap; }
+        .modal-lg { max-width: 900px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/application">Hospital Management System</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/application">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin">Admin Panel</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>In-Patient Management</h2>
+        <a href="/application" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">Available Beds</div>
+                <div class="card-body p-2" id="availableBedsContainer">
+                    <div class="text-center"><div class="spinner-border"></div> Loading beds...</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Current In-Patients</div>
+                <div class="card-body p-2" id="admittedPatientsContainer">
+                    <div class="text-center"><div class="spinner-border"></div> Loading in-patients...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Admit Patient to Bed</div>
+                <div class="card-body">
+                    <form id="admitPatientForm" class="row g-2">
+                        <div class="col-md-4">
+                            <select id="admitPatientSelect" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="admitBedSelect" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="date" id="admitDateIn" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="date" id="admitDateOut" class="form-control">
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-success">Admit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Assign Doctor/Nurse to Patient</div>
+                <div class="card-body">
+                    <form id="assignStaffForm" class="row g-2">
+                        <div class="col-md-4">
+                            <select id="assignPatientSelect" class="form-select" required></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="assignDoctorSelect" class="form-select"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="assignNurseSelect" class="form-select" required></select>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-primary">Assign</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Current Assignments</div>
+                <div class="card-body p-2" id="currentAssignmentsContainer">
+                    <div class="text-center"><div class="spinner-border"></div> Loading assignments...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let beds = [];
+let admitted = [];
+let patients = [];
+let doctors = [];
+let nurses = [];
+let assignments = [];
+
+window.onload = async function() {
+    await Promise.all([
+        fetchBeds(),
+        fetchAdmitted(),
+        fetchPatients(),
+        fetchDoctors(),
+        fetchNurses(),
+        fetchAssignments()
+    ]);
+    renderAvailableBeds();
+    renderAdmittedPatients();
+    renderAdmitPatientForm();
+    renderAssignStaffForm();
+    renderCurrentAssignments();
+};
+
+async function fetchBeds() {
+    const res = await fetch('/api/clinicbeds');
+    beds = await res.json();
+}
+async function fetchAdmitted() {
+    const res = await fetch('/api/admittedto');
+    admitted = await res.json();
+}
+async function fetchPatients() {
+    const res = await fetch('/api/patients');
+    patients = await res.json();
+}
+async function fetchDoctors() {
+    const res = await fetch('/api/physicians');
+    doctors = await res.json();
+}
+async function fetchNurses() {
+    const res = await fetch('/api/nurses');
+    nurses = await res.json();
+}
+async function fetchAssignments() {
+    // Fetch real nurse-patient assignments
+    const res = await fetch('/api/attendsto');
+    assignments = await res.json();
+}
+
+function renderAvailableBeds() {
+    const container = document.getElementById('availableBedsContainer');
+    const occupiedBedIds = admitted.map(a => a.BedID);
+    const available = beds.filter(b => !occupiedBedIds.includes(b.BedID));
+    if (!available.length) {
+        container.innerHTML = `<div class='alert alert-info'>No available beds.</div>`;
+        return;
+    }
+    let html = `<table class='table table-sm table-bordered'><thead><tr><th>Clinic</th><th>Room</th><th>Bed</th><th>Unit</th><th>Wing</th></tr></thead><tbody>`;
+    for (const b of available) {
+        html += `<tr><td>${b.Clinic}</td><td>${b.RoomNum}</td><td>${b.BedLetter}</td><td>${b.Unit}</td><td>${b.Wing}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderAdmittedPatients() {
+    const container = document.getElementById('admittedPatientsContainer');
+    if (!admitted.length) {
+        container.innerHTML = `<div class='alert alert-info'>No in-patients currently admitted.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'><thead><tr><th>Patient</th><th>Bed</th><th>Date In</th><th>Date Out</th><th>Actions</th></tr></thead><tbody>`;
+    for (const a of admitted) {
+        const patient = patients.find(p => p.pid === a.PID);
+        const bed = beds.find(b => b.BedID === a.BedID);
+        html += `<tr>
+            <td>${patient ? patient.first_name + ' ' + patient.last_name : a.PID}</td>
+            <td>${bed ? `${bed.Clinic} Room ${bed.RoomNum} Bed ${bed.BedLetter}` : a.BedID}</td>
+            <td>${a.Date_IN ? a.Date_IN.split('T')[0] : ''}</td>
+            <td>${a.Date_OUT ? a.Date_OUT.split('T')[0] : ''}</td>
+            <td class='table-actions'>
+                <button class='btn btn-sm btn-danger' onclick='removeAdmission(${a.PID},${a.BedID})'>Remove</button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function renderAdmitPatientForm() {
+    // Patients not already admitted
+    const admittedPIDs = admitted.map(a => a.PID);
+    const patientOptions = patients.filter(p => !admittedPIDs.includes(p.pid)).map(p => `<option value='${p.pid}'>${p.first_name} ${p.last_name}</option>`).join('');
+    document.getElementById('admitPatientSelect').innerHTML = patientOptions;
+    // Available beds
+    const occupiedBedIds = admitted.map(a => a.BedID);
+    const availableBeds = beds.filter(b => !occupiedBedIds.includes(b.BedID));
+    const bedOptions = availableBeds.map(b => `<option value='${b.BedID}'>${b.Clinic} Room ${b.RoomNum} Bed ${b.BedLetter} Unit ${b.Unit} Wing ${b.Wing}</option>`).join('');
+    document.getElementById('admitBedSelect').innerHTML = bedOptions;
+}
+
+function renderAssignStaffForm() {
+    // Populate patient, doctor, nurse selects
+    const selectedPatientId = parseInt(document.getElementById('assignPatientSelect')?.value) || null;
+    // Find nurses already assigned to this patient
+    let assignedNurseIds = [];
+    if (selectedPatientId) {
+        assignedNurseIds = assignments.filter(a => a.PID === selectedPatientId && (!a.EndDate && !a.enddate)).map(a => a.NurseID || a.nurseid);
+    }
+    const patientOptions = patients.map(p => `<option value='${p.pid}'>${p.first_name} ${p.last_name}</option>`).join('');
+    const doctorOptions = '<option value="">-- No Doctor --</option>' + doctors.map(d => `<option value='${d.physicianid}'>${d.first_name || ''} ${d.last_name || ''} (ID: ${d.physicianid})</option>`).join('');
+    const nurseOptions = nurses.map(n => `<option value='${n.nurseid}'${assignedNurseIds.includes(n.nurseid) ? ' disabled' : ''}>${n.first_name} ${n.last_name} (ID: ${n.nurseid})${assignedNurseIds.includes(n.nurseid) ? ' [Already Assigned]' : ''}</option>`).join('');
+    document.getElementById('assignPatientSelect').innerHTML = patientOptions;
+    document.getElementById('assignDoctorSelect').innerHTML = doctorOptions;
+    document.getElementById('assignNurseSelect').innerHTML = '<option value="">-- Select Nurse --</option>' + nurseOptions;
+    // Re-render nurse options when patient changes
+    document.getElementById('assignPatientSelect').onchange = renderAssignStaffForm;
+    document.getElementById('assignDoctorSelect').removeAttribute('required');
+    document.getElementById('assignStaffForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const pid = parseInt(document.getElementById('assignPatientSelect').value);
+        const physicianid = document.getElementById('assignDoctorSelect').value;
+        const nurseid = document.getElementById('assignNurseSelect').value;
+        if (physicianid) {
+            await fetch(`/api/patients/${pid}/assign_doctor`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({PhysicianID: parseInt(physicianid)})
+            });
+        }
+        if (nurseid) {
+            const resp = await fetch(`/api/patients/${pid}/assign_nurse`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({NurseID: parseInt(nurseid)})
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert(err.error || 'Failed to assign nurse.');
+                return;
+            }
+        }
+        await fetchPatients();
+        await fetchAssignments();
+        renderCurrentAssignments();
+        renderAssignStaffForm();
+        alert('Assignment(s) complete!');
+    };
+}
+
+function renderCurrentAssignments() {
+    const container = document.getElementById('currentAssignmentsContainer');
+    if (!patients.length) {
+        container.innerHTML = `<div class='alert alert-info'>No assignments found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-sm table-bordered'><thead><tr><th>Patient</th><th>Doctor</th><th>Nurse(s)</th><th>Actions</th></tr></thead><tbody>`;
+    for (const p of patients) {
+        // Doctor
+        const doctor = doctors.find(d => d.physicianid === p.primaryphysician);
+        // Nurses (active assignments)
+        const nurseAssignments = assignments.filter(a => a.PID === p.pid && (!a.EndDate && !a.enddate));
+        const nurseNames = nurseAssignments.map(a => {
+            const n = nurses.find(nu => nu.nurseid === a.NurseID || nu.nurseid === a.nurseid);
+            return n ? `${n.first_name} ${n.last_name} (ID: ${n.nurseid})` : (a.NurseID || a.nurseid);
+        }).join(', ');
+        html += `<tr>
+            <td>${p.first_name} ${p.last_name}</td>
+            <td>${doctor ? (doctor.first_name || '') + ' ' + (doctor.last_name || '') : '-'}</td>
+            <td>${nurseNames || '-'}</td>
+            <td>
+                ${doctor ? `<button class='btn btn-sm btn-danger' onclick='removeDoctor(${p.pid})'>Remove Doctor</button>` : ''}
+                ${nurseAssignments.map(a => `<button class='btn btn-sm btn-danger ms-1' onclick='removeNurse(${p.pid},${a.NurseID || a.nurseid})'>Remove Nurse</button>`).join(' ')}
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+window.removeDoctor = async function(pid) {
+    await fetch(`/api/patients/${pid}/assign_doctor`, {method: 'DELETE'});
+    await fetchPatients();
+    renderCurrentAssignments();
+};
+window.removeNurse = async function(pid, nurseid) {
+    await fetch(`/api/patients/${pid}/assign_nurse`, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({NurseID: nurseid})
+    });
+    await fetchAssignments();
+    renderCurrentAssignments();
+};
+
+async function removeAdmission(pid, bedid) {
+    if (!confirm('Remove this admission?')) return;
+    await fetch(`/api/admittedto/${pid}/${bedid}`, {method: 'DELETE'});
+    await fetchAdmitted();
+    renderAdmittedPatients();
+    renderAvailableBeds();
+    renderCurrentAssignments();
+}
+
+document.getElementById('admitPatientForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const pid = parseInt(document.getElementById('admitPatientSelect').value);
+    const bedid = parseInt(document.getElementById('admitBedSelect').value);
+    const date_in = document.getElementById('admitDateIn').value;
+    const date_out = document.getElementById('admitDateOut').value || null;
+    const resp = await fetch('/api/admittedto', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({PID: pid, BedID: bedid, Date_IN: date_in, Date_OUT: date_out})
+    });
+    if (!resp.ok) {
+        const err = await resp.json();
+        alert(err.error || 'Failed to admit patient.');
+        return;
+    }
+    await fetchAdmitted();
+    await fetchBeds();
+    renderAdmittedPatients();
+    renderAvailableBeds();
+    renderAdmitPatientForm();
+    alert('Patient admitted!');
+};
+</script>
+</body>
+</html> 

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Shift Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Shift Management</h2>
+        <a href="/application" class="btn btn-outline-primary">Back to Dashboard</a>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#shiftModal">Add Shift</button>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" id="filterDay" class="form-control" placeholder="Filter by Day...">
+        </div>
+        <div class="col-md-4">
+            <input type="text" id="filterEmp" class="form-control" placeholder="Filter by Employee Name...">
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="shiftsTable">
+                    <thead>
+                        <tr>
+                            <th>EmpID</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Day</th>
+                            <th>Begin Time</th>
+                            <th>End Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Shifts will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Shift Modal -->
+    <div class="modal fade" id="shiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="shiftForm" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Employee</label>
+                            <select class="form-control" name="empid" id="shiftEmployeeSelect" required>
+                                <option value="">Select Employee...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Day</label>
+                            <select class="form-control" name="day" required>
+                                <option value="">Select Day...</option>
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                                <option value="Saturday">Saturday</option>
+                                <option value="Sunday">Sunday</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Begin Time</label>
+                            <input type="time" class="form-control" name="begin_time" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Time</label>
+                            <input type="time" class="form-control" name="end_time" required>
+                        </div>
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                    <div id="shiftFormStatus" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Employees Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Employees to Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="assignEmployeesList">
+                        <!-- Employee checkboxes will be loaded here -->
+                    </div>
+                    <div id="assignStatus" class="mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveAssignmentsBtn">Save Assignments</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let editingShift = null;
+    let employees = [];
+    let currentAssignShiftId = null;
+    let lastAssignEmployees = [];
+    function loadShifts() {
+        fetch('/api/shifts')
+            .then(res => res.json())
+            .then(shifts => {
+                const dayFilter = document.getElementById('filterDay').value.toLowerCase();
+                const empFilter = document.getElementById('filterEmp').value.toLowerCase();
+                const tbody = document.querySelector('#shiftsTable tbody');
+                tbody.innerHTML = '';
+                shifts.filter(shift => {
+                    let match = true;
+                    if (dayFilter && !shift.day.toLowerCase().includes(dayFilter)) match = false;
+                    if (empFilter && shift.first_name && !shift.first_name.toLowerCase().includes(empFilter) && shift.last_name && !shift.last_name.toLowerCase().includes(empFilter)) match = false;
+                    return match;
+                }).forEach(shift => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${shift.empid}</td>
+                        <td>${shift.first_name}</td>
+                        <td>${shift.last_name}</td>
+                        <td>${shift.day}</td>
+                        <td>${shift.begin_time || ''}</td>
+                        <td>${shift.end_time || ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-1" data-action="edit" data-empid="${shift.empid}" data-day="${shift.day}">Edit</button>
+                            <button class="btn btn-sm btn-secondary me-1" data-action="assign" data-empid="${shift.empid}" data-day="${shift.day}">View/Assign Employees</button>
+                            <button class="btn btn-sm btn-danger" data-action="delete" data-empid="${shift.empid}" data-day="${shift.day}">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(() => {
+                const tbody = document.querySelector('#shiftsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-danger">Failed to load shifts.</td></tr>';
+            });
+    }
+
+    // Fetch employees and populate dropdown
+    function loadEmployeesDropdown(selectedEmpId) {
+        fetch('/api/employees').then(res => res.json()).then(data => {
+            employees = data;
+            const select = document.getElementById('shiftEmployeeSelect');
+            select.innerHTML = '<option value="">Select Employee...</option>';
+            data.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.empid;
+                opt.textContent = `${emp.first_name} ${emp.last_name} (ID: ${emp.empid})`;
+                if (selectedEmpId && emp.empid == selectedEmpId) opt.selected = true;
+                select.appendChild(opt);
+            });
+        });
+    }
+
+    // On modal show, reset or prefill
+    document.getElementById('shiftModal').addEventListener('show.bs.modal', function() {
+        const form = document.getElementById('shiftForm');
+        document.getElementById('shiftFormStatus').innerHTML = '';
+        if (!editingShift) {
+            form.reset();
+            document.querySelector('.modal-title').textContent = 'Add Shift';
+            loadEmployeesDropdown();
+        } else {
+            // Prefill for edit
+            form.day.value = editingShift.day;
+            form.begin_time.value = editingShift.begin_time;
+            form.end_time.value = editingShift.end_time;
+            loadEmployeesDropdown(editingShift.empid);
+            document.querySelector('.modal-title').textContent = 'Edit Shift';
+        }
+    });
+
+    // Handle add/edit shift form
+    document.getElementById('shiftForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const data = {
+            EmpID: form.empid.value,
+            Day: form.day.value,
+            BeginTime: form.begin_time.value,
+            EndTime: form.end_time.value
+        };
+        let statusDiv = document.getElementById('shiftFormStatus');
+        statusDiv.innerHTML = '';
+        try {
+            let res;
+            if (editingShift) {
+                res = await fetch(`/api/shifts/${editingShift.empid}/${editingShift.day}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                res = await fetch('/api/shifts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            if (!res.ok) throw await res.json();
+            var modal = bootstrap.Modal.getInstance(document.getElementById('shiftModal'));
+            if (modal) modal.hide();
+            form.reset();
+            editingShift = null;
+            document.querySelector('.modal-title').textContent = 'Add Shift';
+            loadShifts();
+        } catch (err) {
+            statusDiv.innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to save shift.'}</div>`;
+        }
+    });
+
+    // Refactor edit button to use modal
+    document.getElementById('shiftsTable').addEventListener('click', function(e) {
+        if (e.target.matches('button[data-action="edit"]')) {
+            const empid = e.target.getAttribute('data-empid');
+            const day = e.target.getAttribute('data-day');
+            fetch(`/api/shifts/${empid}/${day}`)
+                .then(res => res.json())
+                .then(shift => {
+                    editingShift = shift;
+                    var modal = new bootstrap.Modal(document.getElementById('shiftModal'));
+                    modal.show();
+                });
+        }
+        if (e.target.matches('button[data-action="assign"]')) {
+            const empid = e.target.getAttribute('data-empid');
+            const day = e.target.getAttribute('data-day');
+            currentAssignShiftId = `${empid}-${day}`;
+            // Load all employees and current assignments
+            Promise.all([
+                fetch('/api/employees').then(res => res.json()),
+                fetch('/api/worksshift').then(res => res.json())
+            ]).then(([employees, assignments]) => {
+                const assigned = assignments.filter(a => a.shift_id == currentAssignShiftId).map(a => a.employee_ssn);
+                lastAssignEmployees = assigned;
+                const listDiv = document.getElementById('assignEmployeesList');
+                listDiv.innerHTML = '';
+                employees.forEach(emp => {
+                    const checked = assigned.includes(emp.ssn) ? 'checked' : '';
+                    const label = `${emp.first_name} ${emp.last_name} (${emp.type || ''})`;
+                    listDiv.innerHTML += `
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${emp.ssn}" id="emp_${emp.ssn}" name="assignEmployee" ${checked}>
+                            <label class="form-check-label" for="emp_${emp.ssn}">${label}</label>
+                        </div>
+                    `;
+                });
+                document.getElementById('assignStatus').innerHTML = '';
+                var modal = new bootstrap.Modal(document.getElementById('assignModal'));
+                modal.show();
+            });
+        }
+        if (e.target.matches('button[data-action="delete"]')) {
+            const empid = e.target.getAttribute('data-empid');
+            const day = e.target.getAttribute('data-day');
+            if (confirm('Delete this shift?')) {
+                fetch(`/api/shifts/${empid}/${day}`, { method: 'DELETE' })
+                    .then(() => loadShifts());
+            }
+        }
+    });
+
+    // Save assignments
+    document.getElementById('saveAssignmentsBtn').addEventListener('click', async function() {
+        if (!currentAssignShiftId) return;
+        const checked = Array.from(document.querySelectorAll('input[name="assignEmployee"]:checked')).map(cb => cb.value);
+        const toAdd = checked.filter(ssn => !lastAssignEmployees.includes(ssn));
+        const toRemove = lastAssignEmployees.filter(ssn => !checked.includes(ssn));
+        let statusDiv = document.getElementById('assignStatus');
+        statusDiv.innerHTML = '';
+        try {
+            // Add new assignments
+            for (let ssn of toAdd) {
+                let res = await fetch('/api/worksshift', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employee_ssn: ssn, shift_id: currentAssignShiftId })
+                });
+                if (!res.ok) throw await res.json();
+            }
+            // Remove assignments
+            for (let ssn of toRemove) {
+                let res = await fetch(`/api/worksshift/${ssn}/${currentAssignShiftId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) throw await res.json();
+            }
+            statusDiv.innerHTML = '<div class="alert alert-success">Assignments updated!</div>';
+            lastAssignEmployees = checked;
+        } catch (err) {
+            statusDiv.innerHTML = `<div class="alert alert-danger">${err.message || 'Failed to update assignments.'}</div>`;
+        }
+    });
+
+    // Filtering events
+    document.getElementById('filterDay').addEventListener('input', loadShifts);
+    document.getElementById('filterEmp').addEventListener('input', loadShifts);
+
+    loadShifts();
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Inventory Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .management-card { cursor: pointer; transition: box-shadow 0.2s; }
+        .management-card:hover { box-shadow: 0 0 10px #007bff33; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Medicine Inventory Management</h2>
+        <a href="/application" class="btn btn-outline-primary">Back to Dashboard</a>
+    </div>
+    <div id="alertPlaceholder"></div>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#medicineModal">Add Medicine</button>
+        <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
+    </div>
+    <div id="tableContainer">
+        <div class="text-center"><div class="spinner-border"></div> Loading medicines...</div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Medicine -->
+<div class="modal fade" id="medicineModal" tabindex="-1" aria-labelledby="medicineModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="medicineModalLabel">Add Medicine</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="medicineForm">
+          <div class="mb-3">
+            <label for="codeInput" class="form-label">Code</label>
+            <input type="number" class="form-control" id="codeInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="madebyInput" class="form-label">Manufacturer</label>
+            <input type="text" class="form-control" id="madebyInput">
+          </div>
+          <div class="mb-3">
+            <label for="nameInput" class="form-label">Name</label>
+            <input type="text" class="form-control" id="nameInput" required>
+          </div>
+          <div class="mb-3">
+            <label for="usageInput" class="form-label">Usage</label>
+            <input type="text" class="form-control" id="usageInput">
+          </div>
+          <div class="mb-3">
+            <label for="descriptionInput" class="form-label">Description</label>
+            <textarea class="form-control" id="descriptionInput" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="unitcostInput" class="form-label">Unit Cost</label>
+            <input type="number" step="0.01" class="form-control" id="unitcostInput" required min="0">
+          </div>
+          <div class="mb-3">
+            <label for="quantityInput" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantityInput" required min="0">
+          </div>
+          <div class="mb-3">
+            <label for="qtyorderedInput" class="form-label">Quantity Ordered</label>
+            <input type="number" class="form-control" id="qtyorderedInput" required min="0">
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let medicines = [];
+let editMedicineCode = null;
+
+window.onload = async function() {
+    await fetchMedicines();
+    renderMedicines();
+};
+
+async function fetchMedicines() {
+    try {
+        const res = await fetch('/api/medicines');
+        medicines = await res.json();
+    } catch (e) {
+        showAlert('Failed to load medicines.', 'danger');
+        medicines = [];
+    }
+}
+
+function renderMedicines() {
+    const tableContainer = document.getElementById('tableContainer');
+    let filtered = medicines;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    if (search) {
+        filtered = medicines.filter(m =>
+            (m.code + m.name + (m.description || '') + (m.quantity || '')).toLowerCase().includes(search)
+        );
+    }
+    if (!filtered.length) {
+        tableContainer.innerHTML = `<div class='alert alert-info'>No medicines found.</div>`;
+        return;
+    }
+    let html = `<table class='table table-bordered table-hover'>
+        <thead><tr>
+            <th>Code</th><th>Name</th><th>Manufacturer</th><th>Usage</th><th>Description</th><th>Unit Cost</th><th>Quantity</th><th>Qty Ordered</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const m of filtered) {
+        html += `<tr>
+            <td>${m.code}</td>
+            <td>${m.name}</td>
+            <td>${m.madeby || ''}</td>
+            <td>${m.usage || ''}</td>
+            <td>${m.description || ''}</td>
+            <td>${m.unitcost !== undefined ? m.unitcost : ''}</td>
+            <td>${m.quantity || 0}</td>
+            <td>${m.qtyordered || 0}</td>
+            <td>
+                <button class='btn btn-sm btn-primary me-1' onclick='editMedicine(${m.code})'>Edit</button>
+                <button class='btn btn-sm btn-danger' onclick='deleteMedicine(${m.code})'>Delete</button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    tableContainer.innerHTML = html;
+}
+
+document.getElementById('searchInput').addEventListener('input', renderMedicines);
+
+document.getElementById('medicineForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const data = {
+        code: parseInt(document.getElementById('codeInput').value),
+        MadeBy: document.getElementById('madebyInput').value,
+        Name: document.getElementById('nameInput').value,
+        Usage: document.getElementById('usageInput').value,
+        description: document.getElementById('descriptionInput').value,
+        UnitCost: parseFloat(document.getElementById('unitcostInput').value),
+        Quantity: parseInt(document.getElementById('quantityInput').value),
+        QtyOrdered: parseInt(document.getElementById('qtyorderedInput').value)
+    };
+    try {
+        let res;
+        if (editMedicineCode !== null) {
+            // Edit
+            res = await fetch(`/api/medicines/${editMedicineCode}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Add
+            res = await fetch(`/api/medicines`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Medicine saved successfully.', 'success');
+        await fetchMedicines();
+        renderMedicines();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('medicineModal')).hide();
+        e.target.reset();
+        editMedicineCode = null;
+    } catch (err) {
+        showAlert('Failed to save medicine: ' + err, 'danger');
+    }
+};
+
+window.editMedicine = function(code) {
+    const m = medicines.find(x => x.code === code);
+    if (!m) return;
+    editMedicineCode = code;
+    document.getElementById('codeInput').value = m.code;
+    document.getElementById('codeInput').disabled = true;
+    document.getElementById('madebyInput').value = m.madeby || '';
+    document.getElementById('nameInput').value = m.name;
+    document.getElementById('usageInput').value = m.usage || '';
+    document.getElementById('descriptionInput').value = m.description || '';
+    document.getElementById('unitcostInput').value = m.unitcost !== undefined ? m.unitcost : '';
+    document.getElementById('quantityInput').value = m.quantity || 0;
+    document.getElementById('qtyorderedInput').value = m.qtyordered || 0;
+    document.getElementById('medicineModalLabel').innerText = 'Edit Medicine';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('medicineModal')).show();
+};
+
+window.deleteMedicine = async function(code) {
+    if (!confirm('Delete this medicine?')) return;
+    try {
+        const res = await fetch(`/api/medicines/${code}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        showAlert('Medicine deleted.', 'success');
+        await fetchMedicines();
+        renderMedicines();
+    } catch (err) {
+        showAlert('Failed to delete medicine: ' + err, 'danger');
+    }
+};
+
+function showAlert(msg, type) {
+    const alert = `<div class='alert alert-${type} alert-dismissible fade show' role='alert'>${msg}<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>`;
+    document.getElementById('alertPlaceholder').innerHTML = alert;
+    setTimeout(() => {
+        const alertEl = document.querySelector('.alert');
+        if (alertEl) alertEl.classList.remove('show');
+    }, 4000);
+}
+
+document.getElementById('medicineModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('medicineForm').reset();
+    document.getElementById('medicineModalLabel').innerText = 'Add Medicine';
+    document.getElementById('codeInput').disabled = false;
+    editMedicineCode = null;
+});
+</script>
+</body>
+</html> 

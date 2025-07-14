@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS631 Project</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">CS631 Project</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Admin Panel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/application">Application</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Hospital Management System</h1>
+                <button id="testDbBtn" class="btn btn-primary me-2">Test Database Connection</button>
+                <a href="/admin" class="btn btn-secondary me-2">Admin Panel</a>
+                <a href="/application" class="btn btn-secondary">Application</a>
+                <div id="dbStatus" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('testDbBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/test-db');
+                const data = await response.json();
+                const statusDiv = document.getElementById('dbStatus');
+                
+                if (data.status === 'success') {
+                    statusDiv.innerHTML = '<div class="alert alert-success">Database connection successful!</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger">Database connection failed: ${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('dbStatus').innerHTML = 
+                    '<div class="alert alert-danger">Error testing database connection</div>';
+            }
+        });
+    </script>
+</body>
+</html> 
